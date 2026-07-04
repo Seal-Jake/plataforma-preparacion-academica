@@ -15,7 +15,7 @@
     "migrate": "npm run prisma:migrate --workspace server",
     "seed": "npm run prisma:seed --workspace server",
     "test": "npm run test --workspace server",
-    "render-build": "npm install && npx prisma generate --schema=server/prisma/schema.production.prisma && npm run build --workspace server && npm run build --workspace client",
+    "render-build": "npm install --include=dev && npx prisma generate --schema=server/prisma/schema.production.prisma && npm run build --workspace server && npm run build --workspace client",
     "render-start": "npm run start --workspace server"
   },
   "devDependencies": {
