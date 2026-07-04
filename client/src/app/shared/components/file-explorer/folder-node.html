@@ -1,0 +1,83 @@
+<div class="folder-node">
+  <div class="folder-header">
+    <button class="toggle" (click)="toggle()">{{ expanded() ? '▾' : '▸' }}</button>
+
+    @if (renombrando()) {
+      <input [(ngModel)]="nombreEditado" (keyup.enter)="guardarRename()" class="rename-input" />
+      <button class="secondary small" (click)="guardarRename()">Guardar</button>
+      <button class="secondary small" (click)="renombrando.set(false)">Cancelar</button>
+    } @else {
+      <span class="folder-name">
+        {{ folder.nombre }}
+        @if (folder.tipoFijo) {
+          <span class="badge">fija</span>
+        }
+      </span>
+    }
+
+    @if (modo === 'estudiante') {
+      <label class="completado-check">
+        <input type="checkbox" [checked]="folder.completado" (change)="toggleCompletado()" />
+        Completado
+      </label>
+    }
+
+    @if (modo === 'docente') {
+      <div class="folder-actions">
+        <button class="secondary small" (click)="showAddSubfolder.set(!showAddSubfolder())">+ Subcarpeta</button>
+        <button class="secondary small" (click)="showUploadForm.set(!showUploadForm())">+ Archivo/Nota</button>
+        @if (!folder.tipoFijo) {
+          <button class="secondary small" (click)="startRename()">Renombrar</button>
+          <button class="danger small" (click)="eliminarCarpeta()">Eliminar</button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (expanded()) {
+    @if (showAddSubfolder()) {
+      <div class="inline-form">
+        <input [(ngModel)]="nuevoNombreSubcarpeta" placeholder="Nombre de la subcarpeta" (keyup.enter)="crearSubcarpeta()" />
+        <button class="small" (click)="crearSubcarpeta()">Crear</button>
+      </div>
+    }
+
+    @if (showUploadForm()) {
+      <div class="inline-form column">
+        <input [(ngModel)]="nuevoArchivoNombre" placeholder="Nombre del elemento" />
+        <textarea [(ngModel)]="nuevoArchivoTexto" placeholder="Nota de texto (opcional si adjuntas un archivo)" rows="2"></textarea>
+        <input type="file" (change)="onFileSelected($event)" />
+        <button class="small" (click)="guardarArchivo()">Guardar</button>
+      </div>
+    }
+
+    @if (folder.archivos.length) {
+      <ul class="archivos-list">
+        @for (a of folder.archivos; track a.id) {
+          <li>
+            <span class="archivo-nombre">{{ a.nombre }}</span>
+            @if (a.contenidoTexto) {
+              <p class="archivo-texto">{{ a.contenidoTexto }}</p>
+            }
+            @if (a.mimeType) {
+              <button class="secondary small" (click)="descargarArchivo(a.id, a.nombre)">
+                Descargar ({{ formatSize(a.sizeBytes) }})
+              </button>
+            }
+            @if (modo === 'docente') {
+              <button class="danger small" (click)="eliminarArchivo(a.id)">Eliminar</button>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (folder.children.length) {
+      <div class="children">
+        @for (child of folder.children; track child.id) {
+          <app-folder-node [folder]="child" [modo]="modo" [topicId]="topicId" (changed)="changed.emit()" />
+        }
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.env
+!.env.example
+*.log
+server/prisma/dev.db
+server/prisma/dev.db-journal
+.angular/
+coverage/
+.claude/

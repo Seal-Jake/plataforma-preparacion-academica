@@ -1,0 +1,18 @@
+section.card {
+  margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}

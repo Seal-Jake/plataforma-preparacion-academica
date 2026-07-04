@@ -1,0 +1,24 @@
+{
+  "name": "plataforma-preparacion-academica",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma web de preparación académica (Álgebra y Cálculo / Aritmética y Estadística)",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n SERVER,CLIENT -c blue,green \"npm run dev --workspace server\" \"npm run start --workspace client\"",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run start --workspace client",
+    "build": "npm run build --workspace server && npm run build --workspace client",
+    "migrate": "npm run prisma:migrate --workspace server",
+    "seed": "npm run prisma:seed --workspace server",
+    "test": "npm run test --workspace server",
+    "render-build": "npm install && npx prisma generate --schema=server/prisma/schema.production.prisma && npm run build --workspace server && npm run build --workspace client",
+    "render-start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

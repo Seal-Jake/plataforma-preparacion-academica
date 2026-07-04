@@ -1,0 +1,64 @@
+<h1 class="section-title"><app-icon name="home" [size]="22" /> Mi Dashboard</h1>
+
+@if (data(); as d) {
+  <section class="card">
+    <h2 class="section-title"><app-icon name="chart" [size]="18" /> Progreso general</h2>
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="d.progresoGeneral.porcentaje"></div>
+    </div>
+    <p class="muted">
+      {{ d.progresoGeneral.completadas }} / {{ d.progresoGeneral.totalCarpetas }} carpetas revisadas ({{
+        d.progresoGeneral.porcentaje
+      }}%)
+    </p>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><app-icon name="clock" [size]="18" /> Pendientes con fecha límite</h2>
+    @if (d.pendientes.length > 0) {
+      <table>
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Categoría</th>
+            <th>Curso / Unidad</th>
+            <th>Fecha límite</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of d.pendientes; track p.sessionId) {
+            <tr>
+              <td>{{ p.title }}</td>
+              <td>{{ p.categoriaNombre }}</td>
+              <td>{{ p.courseName }} / {{ p.unitName }}</td>
+              <td>
+                {{ p.dueDate | date: 'short' }}
+                @if (p.vencido) {
+                  <span class="badge danger"><app-icon name="alert-triangle" [size]="11" /> Vencido</span>
+                }
+              </td>
+              <td>
+                <a [routerLink]="['/estudiante/units', p.unitId]" class="link-with-icon">
+                  Ir a la unidad <app-icon name="arrow-right" [size]="13" />
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <app-empty-state
+        icon="check-circle"
+        title="Sin pendientes por ahora"
+        description="No tienes tareas ni exámenes con fecha límite próxima. ¡Vas al día!"
+      />
+    }
+  </section>
+
+  <a routerLink="/estudiante/cursos" class="link-with-icon">
+    <app-icon name="book-open" [size]="16" /> Ver todos mis cursos <app-icon name="arrow-right" [size]="14" />
+  </a>
+} @else {
+  <p class="muted">Cargando dashboard...</p>
+}

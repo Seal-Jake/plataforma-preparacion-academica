@@ -1,0 +1,194 @@
+@if (topic(); as t) {
+  <a routerLink="/docente" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver al árbol</a>
+  <h1>{{ t.name }}</h1>
+  @if (t.subtemas) {
+    <p class="muted">Subtemas: {{ t.subtemas }}</p>
+  }
+
+  <section class="card">
+    <h2 class="section-title"><app-icon name="folder" [size]="18" /> Contenido del tema</h2>
+    <p class="muted">
+      Organiza el contenido como en un explorador de archivos: crea subcarpetas, sube documentos o escribe notas
+      directamente dentro de cada una de las 4 carpetas fijas.
+    </p>
+    <app-file-explorer [topicId]="t.id" modo="docente" />
+  </section>
+
+  <section class="card">
+    <div class="section-header">
+      <h2 class="section-title"><app-icon name="file-text" [size]="18" /> Banco de preguntas ({{ t.questionCount ?? questions().length }})</h2>
+      @if (t.bancoInsuficiente) {
+        <span class="badge warning"><app-icon name="alert-triangle" [size]="12" /> Menos de {{ t.minimoRequerido }} preguntas: se recomienda ampliar el banco</span>
+      }
+    </div>
+
+    <div class="filters">
+      <select [ngModel]="filterNivel()" (ngModelChange)="filterNivel.set($event); reloadQuestions()" [ngModelOptions]="{standalone: true}">
+        <option value="">Todos los niveles</option>
+        @for (n of nivelesOpciones; track n[0]) {
+          <option [value]="n[0]">{{ n[1] }}</option>
+        }
+      </select>
+      <select [ngModel]="filterTipo()" (ngModelChange)="filterTipo.set($event); reloadQuestions()" [ngModelOptions]="{standalone: true}">
+        <option value="">Todos los tipos</option>
+        @for (tp of tiposOpciones; track tp[0]) {
+          <option [value]="tp[0]">{{ tp[1] }}</option>
+        }
+      </select>
+      <select [ngModel]="filterSection()" (ngModelChange)="filterSection.set($event); reloadQuestions()" [ngModelOptions]="{standalone: true}">
+        <option value="">Ambas secciones</option>
+        @for (s of seccionesOpciones; track s[0]) {
+          <option [value]="s[0]">{{ s[1] }}</option>
+        }
+      </select>
+      <input
+        placeholder="Buscar en el enunciado..."
+        [ngModel]="filterText()"
+        (ngModelChange)="filterText.set($event); reloadQuestions()"
+        [ngModelOptions]="{ standalone: true }"
+      />
+      <button (click)="startNewQuestion()"><app-icon name="plus" [size]="14" /> Nueva pregunta</button>
+    </div>
+
+    @if (questions().length > 0) {
+      <table>
+        <thead>
+          <tr>
+            <th>Enunciado</th>
+            <th>Sección</th>
+            <th>Nivel</th>
+            <th>Correcta(s)</th>
+            <th>Modelo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (q of questions(); track q.id) {
+            <tr>
+              <td>{{ q.enunciado }}</td>
+              <td>{{ etiquetaSeccion(q.section) }}</td>
+              <td>{{ etiquetaNivel(q.nivel) }}</td>
+              <td>{{ correctasTexto(q) }}</td>
+              <td>{{ q.esModelo ? 'Sí' : '' }}</td>
+              <td class="actions">
+                <button class="secondary small" (click)="startEditQuestion(q)"><app-icon name="edit" [size]="13" /> Editar</button>
+                <button class="danger small" (click)="deleteQuestion(q)"><app-icon name="trash" [size]="13" /> Eliminar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <app-empty-state
+        icon="file-text"
+        title="No hay preguntas con estos filtros"
+        description="Crea una pregunta nueva o importa varias a la vez desde un archivo CSV más abajo."
+        actionLabel="Crear la primera pregunta"
+        (action)="startNewQuestion()"
+      />
+    }
+
+    @if (showQuestionForm()) {
+      <form class="card question-form" [formGroup]="questionForm" (ngSubmit)="saveQuestion()">
+        <h3>{{ editingQuestion() ? 'Editar pregunta' : 'Nueva pregunta' }}</h3>
+
+        <div class="fieldset-section">
+          <p class="fieldset-title"><app-icon name="info" [size]="14" /> Datos generales</p>
+          <div class="grid-2">
+            <div class="form-field">
+              <label>Sección</label>
+              <select formControlName="section">
+                @for (s of seccionesOpciones; track s[0]) {
+                  <option [value]="s[0]">{{ s[1] }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Nivel</label>
+              <select formControlName="nivel">
+                @for (n of nivelesOpciones; track n[0]) {
+                  <option [value]="n[0]">{{ n[1] }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Tipo</label>
+              <select formControlName="tipo">
+                @for (tp of tiposOpciones; track tp[0]) {
+                  <option [value]="tp[0]">{{ tp[1] }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label>¿Es modelo (con explicación)?</label>
+              <select formControlName="esModelo">
+                <option [ngValue]="false">No</option>
+                <option [ngValue]="true">Sí</option>
+              </select>
+              <p class="field-hint"><app-icon name="info" [size]="13" /> Las preguntas modelo son las únicas que muestran el desarrollo resuelto al alumno.</p>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Enunciado</label>
+            <textarea formControlName="enunciado" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="fieldset-section">
+          <p class="fieldset-title"><app-icon name="check-circle" [size]="14" /> Alternativas</p>
+          <p class="field-hint" style="margin-bottom: 0.6rem;"><app-icon name="info" [size]="13" /> Marca la casilla de cada alternativa correcta (puede ser una o varias).</p>
+          @for (op of opcionesForm(); track $index; let i = $index) {
+            <div class="opcion-row">
+              <input
+                type="checkbox"
+                [checked]="op.esCorrecta"
+                (change)="toggleOpcionCorrecta(i)"
+                title="Marcar como correcta"
+              />
+              <input
+                [value]="op.texto"
+                (input)="updateOpcionTexto(i, $any($event.target).value)"
+                [placeholder]="'Alternativa ' + (i + 1)"
+              />
+              @if (opcionesForm().length > 4) {
+                <button type="button" class="danger small" (click)="removeOpcion(i)">×</button>
+              }
+            </div>
+          }
+          @if (opcionesForm().length < 5) {
+            <button type="button" class="secondary small" (click)="addOpcion()"><app-icon name="plus" [size]="13" /> Añadir alternativa</button>
+          }
+        </div>
+
+        <div class="form-field">
+          <label>Explicación (solo se muestra si es modelo)</label>
+          <textarea formControlName="explicacion" rows="2"></textarea>
+        </div>
+        <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar pregunta</button>
+        <button type="button" class="secondary" (click)="showQuestionForm.set(false)">Cancelar</button>
+      </form>
+    }
+
+    <div class="card import-card">
+      <h3 class="section-title"><app-icon name="upload" [size]="16" /> Importar preguntas por CSV</h3>
+      <p class="muted">
+        Formato con separador "|": section|nivel|tipo|enunciado|opciones (separadas por ";")|correctas (letras A-E
+        separadas por ",")
+      </p>
+      <input type="file" accept=".csv,text/csv" (change)="onCsvFileSelected($event)" />
+      <button [disabled]="!csvText()" (click)="importCsv()"><app-icon name="upload" [size]="14" /> Importar</button>
+      @if (importResult(); as r) {
+        <p class="badge success"><app-icon name="check-circle" [size]="12" /> {{ r.importadas }} preguntas importadas</p>
+        @if (r.errores.length) {
+          <ul class="error-text">
+            @for (e of r.errores; track e.fila) {
+              <li>Fila {{ e.fila }}: {{ e.error }}</li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  </section>
+} @else {
+  <p class="muted">Cargando tema...</p>
+}

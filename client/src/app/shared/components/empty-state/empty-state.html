@@ -1,0 +1,13 @@
+<div class="empty-state">
+  <div class="empty-icon"><app-icon [name]="icon" [size]="28" /></div>
+  <p class="empty-title">{{ title }}</p>
+  @if (description) {
+    <p class="empty-description">{{ description }}</p>
+  }
+  @if (actionLabel) {
+    <button type="button" (click)="action.emit()">
+      <app-icon name="plus" [size]="14" />
+      {{ actionLabel }}
+    </button>
+  }
+</div>

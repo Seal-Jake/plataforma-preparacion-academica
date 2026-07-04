@@ -1,0 +1,256 @@
+:root {
+  --bg: #0f1117;
+  --bg-elevated: #171a23;
+  --bg-card: #1c2030;
+  --border: #2b3040;
+  --fg: #e6e8ef;
+  --fg-muted: #9aa1b2;
+  --accent: #5b8cff;
+  --accent-hover: #4372e6;
+  --success: #35c48f;
+  --warning: #e6b23a;
+  --danger: #e2555a;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body.theme-light {
+  --bg: #f4f5f8;
+  --bg-elevated: #ffffff;
+  --bg-card: #ffffff;
+  --border: #dde1e8;
+  --fg: #1b1e27;
+  --fg-muted: #5b6272;
+  --accent: #3a63d8;
+  --accent-hover: #2c4fb8;
+  --success: #1e8f66;
+  --warning: #a8760a;
+  --danger: #c53a3f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent-hover);
+}
+
+h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.01em;
+}
+h2 {
+  font-size: 1.2rem;
+  font-weight: 650;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.005em;
+}
+h3 {
+  font-size: 1rem;
+  font-weight: 650;
+  margin: 0 0 0.6rem;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+button {
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  transition: background 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+button:active {
+  transform: scale(0.98);
+}
+button:hover {
+  background: var(--accent-hover);
+}
+button:disabled {
+  background: var(--border);
+  color: var(--fg-muted);
+  cursor: not-allowed;
+}
+button.secondary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+button.secondary:hover {
+  background: var(--bg-elevated);
+}
+button.danger {
+  background: var(--danger);
+}
+
+input,
+select,
+textarea {
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.65rem;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: border-color 0.15s;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.section-title app-icon {
+  color: var(--accent);
+}
+
+.fieldset-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.1rem;
+}
+.fieldset-section > .fieldset-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--fg-muted);
+  margin: 0 0 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.field-hint {
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  margin: 0.2rem 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+.field-hint app-icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--accent);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+.badge.success {
+  color: var(--success);
+  border-color: var(--success);
+}
+.badge.warning {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+.badge.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  color: var(--fg-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+.form-field label {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.muted {
+  color: var(--fg-muted);
+}
+
+.link-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--fg);
+}
+.checkbox-row input[type='checkbox'] {
+  width: auto;
+}

@@ -1,0 +1,27 @@
+<div class="shell">
+  @if (auth.isAuthenticated()) {
+    <header class="topbar">
+      <div class="brand link-with-icon"><app-icon name="book-open" [size]="20" /> Plataforma de Preparación Académica</div>
+      <nav>
+        @if (auth.isDocente()) {
+          <a routerLink="/docente" class="link-with-icon"><app-icon name="home" [size]="15" /> Docente</a>
+        }
+        @if (auth.isEstudiante()) {
+          <a routerLink="/estudiante" class="link-with-icon"><app-icon name="home" [size]="15" /> Dashboard</a>
+          <a routerLink="/estudiante/cursos" class="link-with-icon"><app-icon name="book-open" [size]="15" /> Mis cursos</a>
+        }
+        <a routerLink="/perfil" class="link-with-icon"><app-icon name="user" [size]="15" /> Perfil</a>
+      </nav>
+      <div class="session-info">
+        @if (auth.user()?.avatarUrl) {
+          <img [src]="auth.user()!.avatarUrl" alt="" class="avatar-mini" />
+        }
+        <span class="muted">{{ auth.user()?.name }}</span>
+        <button class="secondary" (click)="logout()"><app-icon name="log-out" [size]="14" /> Salir</button>
+      </div>
+    </header>
+  }
+  <main>
+    <router-outlet />
+  </main>
+</div>

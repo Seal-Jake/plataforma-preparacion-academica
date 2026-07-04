@@ -1,0 +1,82 @@
+@if (unit(); as u) {
+  <a routerLink="/estudiante/cursos" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver a mis cursos</a>
+  <h1>{{ u.name }}</h1>
+
+  <section class="card">
+    <h2 class="section-title"><app-icon name="chart" [size]="18" /> Mi rúbrica</h2>
+    @if (rubrica(); as r) {
+      <app-rubric-chart [rubrica]="r" />
+    } @else {
+      <p class="muted">Cargando rúbrica...</p>
+    }
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><app-icon name="exam" [size]="18" /> Sesiones asignadas</h2>
+    @if (sessions().length > 0) {
+      <table>
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Fecha límite</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of sessions(); track s.id) {
+            <tr>
+              <td>{{ s.title }}</td>
+              <td>
+                {{ s.dueDate ? (s.dueDate | date: 'short') : '—' }}
+                @if (s.vencido) {
+                  <span class="badge danger"><app-icon name="alert-triangle" [size]="11" /> Vencido</span>
+                }
+              </td>
+              <td>
+                <span class="badge" [class.success]="s.estado === 'entregado'">{{ etiquetaEstadoSesion(s.estado || '') }}</span>
+              </td>
+              <td><button class="secondary small" (click)="abrirSesion(s)">
+                <app-icon [name]="s.estado === 'entregado' ? 'file-text' : 'edit'" [size]="13" />
+                {{ s.estado === 'entregado' ? 'Ver historial' : 'Resolver' }}
+              </button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <app-empty-state
+        icon="exam"
+        title="No tienes sesiones asignadas todavía"
+        description="Cuando tu docente active un examen o tarea en esta unidad, aparecerá aquí."
+      />
+    }
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><app-icon name="folder" [size]="18" /> Temas de la unidad</h2>
+    <p class="muted">Explora el contenido de cada tema (Concepto y Marco Teórico, Mecánica y Ejemplos, Actividad Práctica, Aplicación a Economía y Administración) y marca las carpetas como completadas conforme avances.</p>
+    <ul class="topic-list">
+      @for (t of u.topics; track t.id) {
+        <li>
+          <div class="topic-row">
+            <button class="secondary small" (click)="toggleTopic(t.id)">
+              <app-icon name="folder" [size]="13" />
+              {{ expandedTopicId() === t.id ? '▾' : '▸' }} {{ t.name }}
+            </button>
+            <button class="secondary small" (click)="exportarTopicoPdf(t.id, t.name)">
+              <app-icon name="download" [size]="13" /> Exportar PDF
+            </button>
+          </div>
+          @if (expandedTopicId() === t.id) {
+            <div class="topic-explorer">
+              <app-file-explorer [topicId]="t.id" modo="estudiante" />
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+} @else {
+  <p class="muted">Cargando unidad...</p>
+}

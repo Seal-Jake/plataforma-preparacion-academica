@@ -1,0 +1,63 @@
+<h1 class="section-title"><app-icon name="user" [size]="22" /> Mi perfil</h1>
+
+<section class="card">
+  <h2 class="section-title"><app-icon name="camera" [size]="18" /> Foto de perfil</h2>
+  <div class="avatar-row">
+    @if (auth.user()?.avatarUrl) {
+      <img [src]="auth.user()!.avatarUrl" alt="Avatar" class="avatar-preview" />
+    } @else {
+      <div class="avatar-placeholder">{{ auth.user()?.name?.charAt(0) }}</div>
+    }
+    <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarSelected($event)" />
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="section-title"><app-icon name="edit" [size]="18" /> Datos y preferencias</h2>
+  <form [formGroup]="perfilForm" (ngSubmit)="guardarPerfil()">
+    <div class="form-field">
+      <label>Nombre</label>
+      <input formControlName="name" />
+    </div>
+    <div class="form-field">
+      <label>Tema de la interfaz</label>
+      <select formControlName="themePreference">
+        <option value="dark">Oscuro</option>
+        <option value="light">Claro</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label class="checkbox-row">
+        <input type="checkbox" formControlName="notificationsEnabled" />
+        Recibir notificaciones dentro de la plataforma (fechas límite, calificaciones nuevas)
+      </label>
+    </div>
+    <button type="submit" [disabled]="guardando()">
+      <app-icon name="check-circle" [size]="14" /> {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+    @if (guardado()) {
+      <span class="badge success" style="margin-left: 0.5rem;">Guardado</span>
+    }
+  </form>
+</section>
+
+<section class="card">
+  <h2 class="section-title"><app-icon name="lock" [size]="18" /> Cambiar contraseña</h2>
+  <form [formGroup]="passwordForm" (ngSubmit)="cambiarPassword()">
+    <div class="form-field">
+      <label>Contraseña actual</label>
+      <input type="password" formControlName="currentPassword" />
+    </div>
+    <div class="form-field">
+      <label>Nueva contraseña</label>
+      <input type="password" formControlName="newPassword" />
+    </div>
+    @if (passwordError()) {
+      <p class="error-text">{{ passwordError() }}</p>
+    }
+    <button type="submit"><app-icon name="lock" [size]="14" /> Cambiar contraseña</button>
+    @if (passwordGuardada()) {
+      <span class="badge success" style="margin-left: 0.5rem;">Actualizada</span>
+    }
+  </form>
+</section>

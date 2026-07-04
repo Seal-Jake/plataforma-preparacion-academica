@@ -1,0 +1,270 @@
+// Copia de schema.prisma usada SOLO para el despliegue en producción (Postgres).
+// El desarrollo local sigue usando schema.prisma (SQLite) sin tocar este archivo.
+// Los modelos deben mantenerse idénticos entre ambos; solo cambia el datasource.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Estos campos son plain Strings constreñidos por zod en la capa de aplicación
+// (ver src/lib/enums.ts), igual que en schema.prisma.
+// Role: 'docente' | 'estudiante'
+// Seccion: 'matematica' | 'economia_aplicada'
+// Nivel: 'basico' | 'estandar' | 'deco' | 'admision' | 'retos'
+// TipoPregunta: 'operaciones' | 'enunciado' | 'problema_lectura' | 'interpretacion_grafica' | 'proposicion_vf'
+// TipoEvaluacion: 'examen' | 'participacion_clase' | 'participacion_activa' | 'entrega' | 'generica'
+// TipoFijoCarpeta: 'concepto_teoria' | 'mecanica_ejemplos' | 'actividad_practica' | 'aplicacion_economia'
+// ThemePreference: 'dark' | 'light'
+
+model User {
+  id                   String   @id @default(cuid())
+  name                 String
+  email                String   @unique
+  passwordHash         String
+  role                 String
+  avatarUrl            String?
+  avatarData           Bytes?
+  avatarMimeType       String?
+  themePreference      String   @default("dark")
+  notificationsEnabled Boolean  @default(true)
+  createdAt            DateTime @default(now())
+
+  enrollments   Enrollment[]
+  attempts      Attempt[]
+  sessionStates StudentSessionState[]
+  entregas      Entrega[]             @relation("EntregaEstudiante")
+  progresos     ProgressMark[]
+}
+
+model Course {
+  id             String  @id @default(cuid())
+  name           String
+  orderIndex     Int
+  infoEvaluacion String?
+
+  units       Unit[]
+  enrollments Enrollment[]
+}
+
+model Unit {
+  id         String @id @default(cuid())
+  courseId   String
+  name       String
+  orderIndex Int
+
+  course               Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topics               Topic[]
+  sessions             AcademicSession[]
+  evaluationCategories EvaluationCategory[]
+
+  @@index([courseId])
+}
+
+model Topic {
+  id         String  @id @default(cuid())
+  unitId     String
+  name       String
+  orderIndex Int
+  subtemas   String?
+
+  unit      Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  questions Question[]
+  sessions  AcademicSession[]
+  folders   Folder[]
+
+  @@index([unitId])
+}
+
+// Las 4 carpetas con tipoFijo no nulo se crean automáticamente al crear el
+// tema y no pueden renombrarse ni borrarse. Todo lo demás (tipoFijo = null)
+// lo crea el docente libremente, como en un Explorador de Archivos.
+model Folder {
+  id         String   @id @default(cuid())
+  topicId    String
+  parentId   String?
+  nombre     String
+  tipoFijo   String?
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  topic     Topic          @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  parent    Folder?        @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]       @relation("FolderChildren")
+  archivos  FileItem[]
+  progresos ProgressMark[]
+
+  @@index([topicId])
+  @@index([parentId])
+}
+
+model FileItem {
+  id             String   @id @default(cuid())
+  folderId       String
+  nombre         String
+  contenidoTexto String?
+  data           Bytes?
+  mimeType       String?
+  sizeBytes      Int?
+  subidoPor      String
+  createdAt      DateTime @default(now())
+
+  folder Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([folderId])
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  topicId     String
+  section     String
+  nivel       String
+  tipo        String
+  enunciado   String
+  explicacion String?
+  esModelo    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  topic    Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  opciones QuestionOption[]
+  attempts Attempt[]
+
+  @@index([topicId])
+}
+
+model QuestionOption {
+  id         String  @id @default(cuid())
+  questionId String
+  texto      String
+  esCorrecta Boolean @default(false)
+  orderIndex Int     @default(0)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  studentId String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+}
+
+// Reemplaza el "tipo" fijo de sesión de la v1: el docente crea las
+// categorías que necesite por unidad, con el nombre y peso que quiera.
+model EvaluationCategory {
+  id               String  @id @default(cuid())
+  unitId           String
+  nombre           String
+  peso             Float
+  tipoEvaluacion   String
+  promediarPorTema Boolean @default(false)
+
+  unit     Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  sessions AcademicSession[]
+
+  @@index([unitId])
+}
+
+model AcademicSession {
+  id                String    @id @default(cuid())
+  unitId            String
+  topicId           String?
+  categoriaId       String
+  title             String
+  questionIds       String // JSON array of question ids, canonical order ("[]" si es solo de tipo entrega)
+  dueDate           DateTime?
+  timeLimitMinutes  Int?
+  abiertoParaTodos  Boolean   @default(false)
+  requiereEvidencia Boolean   @default(false)
+  pesoAciertos      Float     @default(40)
+  pesoEvidencia     Float     @default(60)
+  createdAt         DateTime  @default(now())
+
+  unit          Unit                  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  topic         Topic?                @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  categoria     EvaluationCategory    @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  attempts      Attempt[]
+  studentStates StudentSessionState[]
+  entregas      Entrega[]
+
+  @@index([unitId])
+  @@index([topicId])
+  @@index([categoriaId])
+}
+
+model StudentSessionState {
+  id            String    @id @default(cuid())
+  sessionId     String
+  studentId     String
+  questionOrder String // JSON array of question ids, order shown to this student
+  startedAt     DateTime  @default(now())
+  deadlineAt    DateTime?
+  submittedAt   DateTime?
+
+  session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+}
+
+model Attempt {
+  id                String   @id @default(cuid())
+  sessionId         String
+  studentId         String
+  questionId        String
+  selectedOptionIds String // JSON array de ids de QuestionOption elegidos
+  shownOptionOrder  String // JSON array de ids de QuestionOption, orden mostrado (auditoría)
+  puntaje           Float // 0..1, parcial: correctas marcadas / total correctas
+  correct           Boolean // atajo: puntaje === 1
+  answeredAt        DateTime @default(now())
+
+  session  AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student  User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId, questionId])
+  @@index([sessionId])
+  @@index([studentId])
+}
+
+// Reemplaza Investigacion: unifica Investigación, Participación Activa
+// (foto), Tareas extra, Retos, y la evidencia del examen — cualquier
+// entrega de texto/archivo que el docente califica manualmente.
+model Entrega {
+  id              String    @id @default(cuid())
+  sessionId       String
+  studentId       String
+  contenidoTexto  String?
+  archivoData     Bytes?
+  archivoMimeType String?
+  nota            Float?
+  feedback        String?
+  entregadoAt     DateTime?
+
+  session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User            @relation("EntregaEstudiante", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+}
+
+model ProgressMark {
+  id        String   @id @default(cuid())
+  studentId String
+  folderId  String
+  marcadoAt DateTime @default(now())
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  folder  Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, folderId])
+}

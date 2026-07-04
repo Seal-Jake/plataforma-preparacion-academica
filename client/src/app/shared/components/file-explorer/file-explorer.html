@@ -1,0 +1,18 @@
+@if (cargando()) {
+  <p class="muted">Cargando contenido del tema...</p>
+} @else {
+  @if (modo === 'estudiante' && progreso(); as p) {
+    <div class="progress-wrap">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="p.porcentaje"></div>
+      </div>
+      <span class="muted progress-label">{{ p.completadas }} / {{ p.totalCarpetas }} carpetas revisadas ({{ p.porcentaje }}%)</span>
+    </div>
+  }
+
+  <div class="explorer-tree">
+    @for (folder of tree(); track folder.id) {
+      <app-folder-node [folder]="folder" [modo]="modo" [topicId]="topicId" (changed)="reload()" />
+    }
+  </div>
+}

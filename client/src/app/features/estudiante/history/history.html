@@ -1,0 +1,53 @@
+@if (result(); as r) {
+  <a routerLink="/estudiante/cursos" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver a mis cursos</a>
+  <h1 class="section-title"><app-icon name="file-text" [size]="22" /> Historial de la sesión</h1>
+
+  <section class="card resumen">
+    <div>
+      <span class="muted">Estado</span>
+      <strong>{{ etiquetaEstadoSesion(r.estado) }}</strong>
+    </div>
+    <div>
+      <span class="muted">Correctas</span>
+      <strong>{{ r.correctas }} / {{ r.total }}</strong>
+    </div>
+    <div>
+      <span class="muted">Nota (0-20)</span>
+      <strong>{{ r.nota ?? '—' }}</strong>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><app-icon name="check-circle" [size]="18" /> Respuestas</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Enunciado</th>
+          <th>Tu respuesta</th>
+          <th>Resultado</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (resp of r.respuestas; track resp.questionId) {
+          <tr>
+            <td>{{ resp.enunciado }}</td>
+            <td>{{ resp.seleccion.join(', ') }}</td>
+            <td>
+              <span class="badge" [class.success]="resp.correcta" [class.danger]="!resp.correcta">
+                {{ resp.correcta ? 'Correcta' : ('Parcial: ' + (resp.puntaje * 100).toFixed(0) + '%') }}
+              </span>
+            </td>
+            <td>{{ resp.answeredAt | date: 'short' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="muted">No hay respuestas registradas.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+} @else {
+  <p class="muted">Cargando historial...</p>
+}

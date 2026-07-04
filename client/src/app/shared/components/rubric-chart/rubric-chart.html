@@ -1,0 +1,20 @@
+<div class="chart-wrap">
+  <canvas baseChart [data]="chartData()" [options]="chartOptions" type="bar"> </canvas>
+</div>
+
+<div class="rubrica-detalle">
+  @for (c of rubrica().categorias; track c.nombre) {
+    <div class="detalle-item">
+      <span>{{ c.nombre }} ({{ c.peso }}%)</span>
+      <strong>{{ c.tieneDatos ? c.nota : 'Sin datos' }}</strong>
+    </div>
+  }
+  <div class="detalle-item final">
+    <span>Nota final proyectada</span>
+    <strong>{{ rubrica().notaFinal ?? 'Sin datos aún' }}</strong>
+  </div>
+  <p class="muted cobertura">
+    Esta rúbrica tiene {{ rubrica().porcentajePonderadoConDatos }}% de su peso total con información real. El resto
+    aún no se muestra como cero: simplemente falta registrar.
+  </p>
+</div>

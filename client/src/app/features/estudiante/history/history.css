@@ -1,0 +1,13 @@
+.resumen {
+  display: flex;
+  gap: 2rem;
+  margin: 1rem 0 1.5rem;
+}
+.resumen div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.resumen strong {
+  font-size: 1.3rem;
+}

@@ -1,0 +1,108 @@
+.top-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.nav-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.dot {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+.dot.answered {
+  border-color: var(--success);
+  color: var(--success);
+}
+.dot.active {
+  border-color: var(--accent);
+  color: var(--fg);
+  background: var(--bg-elevated);
+}
+
+.question-card {
+  margin-bottom: 1rem;
+}
+
+.question-meta {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.enunciado {
+  font-size: 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.opcion {
+  text-align: left;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.opcion input[type='checkbox'] {
+  pointer-events: none;
+}
+.opcion.selected {
+  border-color: var(--accent);
+  background: var(--bg-elevated);
+}
+.opcion.correct {
+  border-color: var(--success);
+  color: var(--success);
+}
+.opcion.incorrect {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.feedback {
+  margin-top: 1rem;
+  font-weight: 600;
+}
+.feedback.correct {
+  color: var(--success);
+}
+.feedback.incorrect {
+  color: var(--danger);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.responder-btn {
+  margin-top: 1rem;
+}
+
+.evidencia-card {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.evidencia-card textarea {
+  width: 100%;
+  resize: vertical;
+}

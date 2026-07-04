@@ -1,0 +1,69 @@
+<h1 class="section-title"><app-icon name="book-open" [size]="22" /> Mis cursos</h1>
+<p class="muted">Elige una unidad para gestionar sus categorías de evaluación, sesiones y estudiantes. Los temas se editan haciendo clic en su nombre.</p>
+
+@for (course of courses(); track course.id) {
+  <section class="card course-block">
+    <div class="course-header">
+      <h2 class="section-title"><app-icon name="folder" [size]="18" /> {{ course.name }}</h2>
+      <a [routerLink]="['/cursos', course.id, 'info']" class="link-with-icon">
+        <app-icon name="info" [size]="14" /> Información del curso
+      </a>
+    </div>
+    @for (unit of course.units; track unit.id) {
+      <div class="unit-block">
+        <div class="unit-header">
+          <button class="secondary" (click)="toggleUnit(unit.id)">
+            <app-icon name="folder" [size]="14" />
+            {{ isExpanded(unit.id) ? '▾' : '▸' }} {{ unit.name }}
+          </button>
+          <a [routerLink]="['/docente/units', unit.id]" class="link-with-icon">
+            Gestionar unidad <app-icon name="arrow-right" [size]="14" />
+          </a>
+        </div>
+
+        @if (isExpanded(unit.id)) {
+          <ul class="topic-list">
+            @for (topic of unit.topics; track topic.id) {
+              <li>
+                <a [routerLink]="['/docente/topics', topic.id]" class="link-with-icon">
+                  <app-icon name="file-text" [size]="14" /> {{ topic.name }}
+                </a>
+              </li>
+            } @empty {
+              <li class="muted">Esta unidad todavía no tiene temas.</li>
+            }
+          </ul>
+
+          @if (addingTopicToUnit() === unit.id) {
+            <form class="inline-form" [formGroup]="topicForm" (ngSubmit)="saveTopic(unit.id)">
+              <input formControlName="name" placeholder="Nombre del tema" />
+              <input formControlName="subtemas" placeholder="Subtemas (opcional)" />
+              <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
+              <button type="button" class="secondary" (click)="addingTopicToUnit.set(null)">Cancelar</button>
+            </form>
+          } @else {
+            <button class="secondary small" (click)="startAddTopic(unit.id)">
+              <app-icon name="plus" [size]="13" /> Añadir tema
+            </button>
+          }
+        }
+      </div>
+    } @empty {
+      <p class="muted">Este curso todavía no tiene unidades.</p>
+    }
+
+    @if (addingUnitToCourse() === course.id) {
+      <form class="inline-form" [formGroup]="unitForm" (ngSubmit)="saveUnit(course.id)">
+        <input formControlName="name" placeholder="Nombre de la unidad" />
+        <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
+        <button type="button" class="secondary" (click)="addingUnitToCourse.set(null)">Cancelar</button>
+      </form>
+    } @else {
+      <button class="secondary small" (click)="startAddUnit(course.id)">
+        <app-icon name="plus" [size]="13" /> Añadir unidad
+      </button>
+    }
+  </section>
+} @empty {
+  <p class="muted">Todavía no hay cursos creados.</p>
+}

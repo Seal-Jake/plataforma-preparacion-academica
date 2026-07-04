@@ -1,0 +1,116 @@
+@if (loading()) {
+  <p class="muted">Cargando sesión...</p>
+} @else if (errorMessage()) {
+  <div class="card">
+    <a routerLink="/estudiante" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Salir</a>
+    <p class="error-text"><app-icon name="alert-triangle" [size]="14" /> {{ errorMessage() }}</p>
+  </div>
+} @else if (data(); as d) {
+  <div class="top-row">
+    <a routerLink="/estudiante" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Salir</a>
+    @if (remainingSeconds() !== null && !finished()) {
+      <span class="badge" [class.danger]="remainingSeconds()! < 60"><app-icon name="clock" [size]="12" /> Tiempo restante: {{ formattedTime() }}</span>
+    }
+    <span class="muted">{{ progreso().respondidas }} / {{ progreso().total }} respondidas</span>
+  </div>
+
+  @if (finished()) {
+    <div class="card">
+      <h2 class="section-title"><app-icon name="check-circle" [size]="18" /> Sesión entregada</h2>
+      <p class="muted">Ya registramos tus respuestas. Puedes revisar tu historial.</p>
+      <a [routerLink]="['/estudiante/sessions', d.sessionId, 'historial']" class="link-with-icon">
+        <app-icon name="file-text" [size]="14" /> Ver historial de respuestas
+      </a>
+    </div>
+  } @else {
+    @if (d.preguntas.length > 0) {
+      <div class="nav-dots">
+        @for (p of d.preguntas; track p.questionId; let i = $index) {
+          <button
+            class="dot"
+            [class.active]="i === currentIndex()"
+            [class.answered]="p.respondida"
+            (click)="irA(i)"
+          >
+            {{ i + 1 }}
+          </button>
+        }
+      </div>
+
+      @if (currentQuestion(); as q) {
+        <div class="card question-card">
+          <div class="question-meta">
+            <span class="badge">{{ etiquetaNivel(q.nivel) }}</span>
+            <span class="badge">{{ etiquetaSeccion(q.section) }}</span>
+            <span class="badge">{{ etiquetaTipoPregunta(q.tipo) }}</span>
+            @if (q.multiCorrecta) {
+              <span class="badge warning"><app-icon name="info" [size]="11" /> Selecciona todas las que correspondan</span>
+            }
+          </div>
+          <p class="enunciado">{{ q.enunciado }}</p>
+
+          <div class="opciones">
+            @for (opcion of q.opciones; track opcion.id) {
+              <button
+                class="opcion secondary"
+                [class.selected]="seleccionActual().has(opcion.id)"
+                [class.correct]="q.respondida && q.seleccionadas.includes(opcion.id) && q.puntajeObtenido === 1"
+                [disabled]="q.respondida"
+                (click)="toggleOpcion(opcion.id)"
+              >
+                <input type="checkbox" [checked]="seleccionActual().has(opcion.id)" [disabled]="q.respondida" />
+                {{ opcion.texto }}
+              </button>
+            }
+          </div>
+
+          @if (!q.respondida) {
+            <button class="responder-btn" [disabled]="seleccionActual().size === 0" (click)="responder()">
+              <app-icon name="check-circle" [size]="14" /> Responder
+            </button>
+          }
+
+          @if (q.respondida) {
+            <p class="feedback" [class.correct]="q.puntajeObtenido === 1" [class.incorrect]="q.puntajeObtenido! < 1">
+              <app-icon [name]="q.puntajeObtenido === 1 ? 'check-circle' : 'alert-triangle'" [size]="14" />
+              {{ q.puntajeObtenido === 1 ? 'Correcto' : 'Puntaje parcial: ' + (q.puntajeObtenido! * 100).toFixed(0) + '%' }}
+            </p>
+            @if (q.explicacion) {
+              <p class="muted">Explicación: {{ q.explicacion }}</p>
+            }
+          }
+        </div>
+
+        <div class="nav-buttons">
+          <button class="secondary" (click)="anterior()" [disabled]="currentIndex() === 0">Anterior</button>
+          <button class="secondary" (click)="siguiente()" [disabled]="currentIndex() === d.preguntas.length - 1">
+            Siguiente
+          </button>
+          <button (click)="finish()"><app-icon name="upload" [size]="14" /> Entregar sesión</button>
+        </div>
+      }
+    }
+
+    @if (session()?.requiereEvidencia || d.preguntas.length === 0) {
+      <div class="card evidencia-card">
+        <h3 class="section-title">
+          <app-icon name="upload" [size]="16" />
+          {{ d.preguntas.length === 0 ? 'Entrega' : 'Evidencia de resolución (' + session()!.pesoEvidencia + '% de la nota)' }}
+        </h3>
+        <p class="muted">Sube un archivo con el desarrollo completo de tus ejercicios, o descríbelo en texto.</p>
+        <textarea [(ngModel)]="entregaTexto" rows="4" placeholder="Descripción o resolución en texto (opcional)"></textarea>
+        <input type="file" (change)="onEvidenciaSelected($event)" />
+        <button (click)="guardarEvidencia()"><app-icon name="upload" [size]="14" /> Guardar evidencia</button>
+        @if (entregaGuardada()) {
+          <span class="badge success"><app-icon name="check-circle" [size]="11" /> Guardado</span>
+        }
+        @if (entrega()?.nota !== null && entrega()?.nota !== undefined) {
+          <p>Nota de evidencia: <strong>{{ entrega()!.nota }}</strong></p>
+        }
+        @if (d.preguntas.length === 0) {
+          <button (click)="finish()"><app-icon name="upload" [size]="14" /> Entregar sesión</button>
+        }
+      </div>
+    }
+  }
+}

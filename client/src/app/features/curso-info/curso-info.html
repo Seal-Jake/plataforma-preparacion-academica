@@ -1,0 +1,63 @@
+<a [routerLink]="volver()" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver</a>
+<h1 class="section-title"><app-icon name="info" [size]="22" /> Información del Curso</h1>
+
+@if (info(); as i) {
+  <section class="card">
+    <div class="section-header">
+      <h2 class="section-title"><app-icon name="file-text" [size]="18" /> Cómo serás evaluado</h2>
+      @if (auth.isDocente() && !editando()) {
+        <button class="secondary small" (click)="startEdit()"><app-icon name="edit" [size]="13" /> Editar texto</button>
+      }
+    </div>
+
+    @if (editando()) {
+      <textarea [(ngModel)]="textoEditado" rows="8"></textarea>
+      <button (click)="guardar()"><app-icon name="check-circle" [size]="14" /> Guardar</button>
+      <button class="secondary" (click)="editando.set(false)">Cancelar</button>
+    } @else if (i.infoEvaluacion) {
+      <p class="texto-info">{{ i.infoEvaluacion }}</p>
+    } @else {
+      <app-empty-state
+        icon="file-text"
+        title="Aún no hay una descripción de evaluación"
+        [description]="auth.isDocente() ? 'Escribe aquí cómo se evaluará este curso para que tus estudiantes lo vean.' : 'Tu docente todavía no ha escrito una descripción para este curso.'"
+        [actionLabel]="auth.isDocente() ? 'Escribir descripción' : undefined"
+        (action)="startEdit()"
+      />
+    }
+    @if (guardado()) {
+      <span class="badge success"><app-icon name="check-circle" [size]="11" /> Guardado</span>
+    }
+  </section>
+
+  <section class="card">
+    <h2 class="section-title"><app-icon name="chart" [size]="18" /> Ponderación por unidad</h2>
+    @for (u of i.unidades; track u.unitId) {
+      <div class="unidad-block">
+        <h3>{{ u.unitName }}</h3>
+        @if (u.categorias.length) {
+          <table>
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th>Peso</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of u.categorias; track c.nombre) {
+                <tr>
+                  <td>{{ c.nombre }}</td>
+                  <td>{{ c.peso }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="muted">Aún no hay categorías de evaluación configuradas para esta unidad.</p>
+        }
+      </div>
+    }
+  </section>
+} @else {
+  <p class="muted">Cargando información del curso...</p>
+}

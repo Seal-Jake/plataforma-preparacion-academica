@@ -1,0 +1,44 @@
+.course-block {
+  margin-bottom: 1.25rem;
+}
+
+.course-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.unit-block {
+  padding: 0.5rem 0 0.5rem 1rem;
+  border-left: 2px solid var(--border);
+  margin: 0.5rem 0;
+}
+
+.unit-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.topic-list {
+  list-style: none;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+.topic-list li {
+  padding: 0.2rem 0;
+}
+
+.inline-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+button.small {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
