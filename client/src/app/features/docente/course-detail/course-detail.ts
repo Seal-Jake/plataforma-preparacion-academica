@@ -9,7 +9,7 @@ import { EnrollmentsService } from '../../../core/services/enrollments.service';
 import { EntregasService } from '../../../core/services/entregas.service';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
-import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
+import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
 import { AcademicSession, Course, Entrega, Enrollment, Question, Topic } from '../../../core/models/models';
 
 @Component({
@@ -31,6 +31,7 @@ export class CourseDetail implements OnInit {
   ayudaTipoSesionFijo = ayudaTipoSesionFijo;
   esSesionDeEvidencia = esSesionDeEvidencia;
   etiquetaNivel = etiquetaNivel;
+  etiquetaCantidadPreguntas = etiquetaCantidadPreguntas;
 
   course = signal<Course | null>(null);
   allTopics = signal<Topic[]>([]);

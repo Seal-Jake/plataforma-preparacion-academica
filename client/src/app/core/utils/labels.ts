@@ -73,6 +73,10 @@ export function esSesionDeEvidencia(v: string): boolean {
   return v === 'participacion_activa' || v === 'proyecto_unidad' || v === 'proyecto_final_curso';
 }
 
+export function etiquetaCantidadPreguntas(n: number): string {
+  return n === 1 ? '1 pregunta' : `${n} preguntas`;
+}
+
 const ESTADO_SESION_LABELS: Record<string, string> = {
   no_iniciado: 'No iniciado',
   en_curso: 'En curso',

@@ -7,47 +7,73 @@
       <span class="muted">Estado</span>
       <strong>{{ etiquetaEstadoSesion(r.estado) }}</strong>
     </div>
-    <div>
-      <span class="muted">Correctas</span>
-      <strong>{{ r.correctas }} / {{ r.total }}</strong>
-    </div>
-    <div>
-      <span class="muted">Nota (0-20)</span>
-      <strong>{{ r.nota ?? '—' }}</strong>
-    </div>
+    @if (r.total > 0) {
+      <div>
+        <span class="muted">Correctas</span>
+        <strong>{{ r.correctas }} / {{ r.total }}</strong>
+      </div>
+      <div>
+        <span class="muted">Nota (0-20)</span>
+        <strong>{{ r.nota ?? '—' }}</strong>
+      </div>
+    }
   </section>
 
-  <section class="card">
-    <h2 class="section-title"><app-icon name="check-circle" [size]="18" /> Respuestas</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Enunciado</th>
-          <th>Tu respuesta</th>
-          <th>Resultado</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (resp of r.respuestas; track resp.questionId) {
+  @if (r.entrega; as e) {
+    <section class="card">
+      <h2 class="section-title"><app-icon name="upload" [size]="18" /> Tu entrega</h2>
+      @if (e.contenidoTexto) {
+        <p>{{ e.contenidoTexto }}</p>
+      }
+      @if (e.tieneArchivo) {
+        <p class="muted"><app-icon name="file-text" [size]="13" /> Adjuntaste un archivo.</p>
+      }
+      <p class="muted">Entregado: {{ e.entregadoAt ? (e.entregadoAt | date: 'short') : '—' }}</p>
+      <div class="resumen">
+        <div>
+          <span class="muted">Nota de la entrega (0-20)</span>
+          <strong>{{ e.nota ?? 'Aún sin calificar' }}</strong>
+        </div>
+      </div>
+      @if (e.feedback) {
+        <p class="muted">Comentario del docente: {{ e.feedback }}</p>
+      }
+    </section>
+  }
+
+  @if (r.total > 0) {
+    <section class="card">
+      <h2 class="section-title"><app-icon name="check-circle" [size]="18" /> Respuestas</h2>
+      <table>
+        <thead>
           <tr>
-            <td>{{ resp.enunciado }}</td>
-            <td>{{ resp.seleccion.join(', ') }}</td>
-            <td>
-              <span class="badge" [class.success]="resp.correcta" [class.danger]="!resp.correcta">
-                {{ resp.correcta ? 'Correcta' : ('Parcial: ' + (resp.puntaje * 100).toFixed(0) + '%') }}
-              </span>
-            </td>
-            <td>{{ resp.answeredAt | date: 'short' }}</td>
+            <th>Enunciado</th>
+            <th>Tu respuesta</th>
+            <th>Resultado</th>
+            <th>Fecha</th>
           </tr>
-        } @empty {
-          <tr>
-            <td colspan="4" class="muted">No hay respuestas registradas.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </section>
+        </thead>
+        <tbody>
+          @for (resp of r.respuestas; track resp.questionId) {
+            <tr>
+              <td>{{ resp.enunciado }}</td>
+              <td>{{ resp.seleccion.join(', ') }}</td>
+              <td>
+                <span class="badge" [class.success]="resp.correcta" [class.danger]="!resp.correcta">
+                  {{ resp.correcta ? 'Correcta' : ('Parcial: ' + (resp.puntaje * 100).toFixed(0) + '%') }}
+                </span>
+              </td>
+              <td>{{ resp.answeredAt | date: 'short' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="muted">No hay respuestas registradas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
 } @else {
   <p class="muted">Cargando historial...</p>
 }

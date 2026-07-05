@@ -10,7 +10,7 @@ import { EntregasService } from '../../../core/services/entregas.service';
 import { FileExplorer } from '../../../shared/components/file-explorer/file-explorer';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
-import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
+import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
 import { AcademicSession, Entrega, Enrollment, Question, QuestionOption, Topic } from '../../../core/models/models';
 
 @Component({
@@ -31,6 +31,7 @@ export class TopicEditor implements OnInit {
   etiquetaTipoSesionFijo = etiquetaTipoSesionFijo;
   ayudaTipoSesionFijo = ayudaTipoSesionFijo;
   esSesionDeEvidencia = esSesionDeEvidencia;
+  etiquetaCantidadPreguntas = etiquetaCantidadPreguntas;
 
   topic = signal<Topic | null>(null);
 

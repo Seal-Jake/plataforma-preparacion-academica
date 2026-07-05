@@ -26,7 +26,7 @@
                 {{ etiquetaTipoSesionFijo(s.tipoFijo) }}
                 <p class="field-hint"><app-icon name="info" [size]="12" /> {{ ayudaTipoSesionFijo(s.tipoFijo) }}</p>
               </td>
-              <td>{{ esSesionDeEvidencia(s.tipoFijo) ? 'Entrega manual' : (s.questionIds.length + ' preguntas') }}</td>
+              <td>{{ esSesionDeEvidencia(s.tipoFijo) ? 'Entrega manual' : etiquetaCantidadPreguntas(s.questionIds.length) }}</td>
               <td>{{ s.dueDate ? (s.dueDate | date: 'short') : '—' }}</td>
               <td>
                 <button class="secondary small" (click)="toggleApertura(s)">

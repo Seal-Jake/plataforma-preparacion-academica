@@ -31,6 +31,7 @@ export class SessionSolve implements OnInit, OnDestroy {
   finished = signal(false);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
+  entregaError = signal<string | null>(null);
 
   seleccionActual = signal<Set<string>>(new Set());
 
@@ -165,12 +166,18 @@ export class SessionSolve implements OnInit, OnDestroy {
 
   finish(automatico = false) {
     if (this.finished()) return;
-    this.sessionsSvc.finish(this.sessionId).subscribe(() => {
-      this.finished.set(true);
-      if (this.timerHandle) clearInterval(this.timerHandle);
-      if (!automatico) {
-        this.router.navigate(['/estudiante/sessions', this.sessionId, 'historial']);
-      }
+    this.entregaError.set(null);
+    this.sessionsSvc.finish(this.sessionId).subscribe({
+      next: () => {
+        this.finished.set(true);
+        if (this.timerHandle) clearInterval(this.timerHandle);
+        if (!automatico) {
+          this.router.navigate(['/estudiante/sessions', this.sessionId, 'historial']);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.entregaError.set(err.error?.error || 'No se pudo entregar la sesión.');
+      },
     });
   }
 

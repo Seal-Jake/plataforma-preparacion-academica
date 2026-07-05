@@ -29,7 +29,8 @@ export class UnitView implements OnInit {
   etiquetaEstadoSesion = etiquetaEstadoSesion;
 
   unit = signal<Unit | null>(null);
-  sessions = signal<AcademicSession[]>([]);
+  sessions = signal<AcademicSession[]>([]); // solo las 2 sesiones propias de la unidad
+  private topicSessions = signal<AcademicSession[]>([]); // sesiones de los temas de la unidad
   rubrica = signal<RubricaResultado | null>(null);
   expandedTopicId = signal<string | null>(null);
 
@@ -38,8 +39,15 @@ export class UnitView implements OnInit {
   ngOnInit() {
     this.unitId = this.route.snapshot.paramMap.get('unitId')!;
     this.coursesSvc.getUnit(this.unitId).subscribe((u) => this.unit.set(u));
-    this.sessionsSvc.list({ unitId: this.unitId }).subscribe((s) => this.sessions.set(s));
+    this.sessionsSvc.list({ unitId: this.unitId }).subscribe((all) => {
+      this.sessions.set(all.filter((s) => !s.topicId));
+      this.topicSessions.set(all.filter((s) => !!s.topicId));
+    });
     this.rubricSvc.getUnidad(this.unitId).subscribe((r) => this.rubrica.set(r));
+  }
+
+  sesionesDeTema(topicId: string): AcademicSession[] {
+    return this.topicSessions().filter((s) => s.topicId === topicId);
   }
 
   abrirSesion(s: AcademicSession) {

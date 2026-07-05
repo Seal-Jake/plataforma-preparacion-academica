@@ -140,8 +140,7 @@ sessionsRouter.post(
     if (!session) throw notFound('Sesión');
     await assertEnrolledForSession(req.user!.sub, session);
 
-    const tipo = TIPOS_SESION_FIJOS_POR_ID[session.tipoFijo];
-    if (tipo?.modo === 'examen' && !session.abiertoParaTodos) {
+    if (!session.abiertoParaTodos) {
       throw badRequest('Esta evaluación aún no ha sido habilitada por tu docente.');
     }
 
@@ -303,6 +302,16 @@ sessionsRouter.post(
     if (!state) throw badRequest('Debes iniciar la sesión antes de entregarla.');
     if (state.submittedAt) return res.json(state);
 
+    const session = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
+    if (session?.requiereEvidencia) {
+      const entrega = await prisma.entrega.findUnique({
+        where: { sessionId_studentId: { sessionId: req.params.id, studentId: req.user!.sub } },
+      });
+      if (!entrega?.entregadoAt) {
+        throw badRequest('Guarda tu evidencia (texto o archivo) antes de entregar la sesión.');
+      }
+    }
+
     const updated = await prisma.studentSessionState.update({
       where: { id: state.id },
       data: { submittedAt: new Date() },
@@ -340,6 +349,20 @@ sessionsRouter.get(
     const total = JSON.parse(session.questionIds).length as number;
     const sumaPuntaje = attempts.reduce((acc, a) => acc + a.puntaje, 0);
 
+    let entrega = null;
+    if (session.requiereEvidencia) {
+      const e = await prisma.entrega.findUnique({ where: { sessionId_studentId: { sessionId: session.id, studentId } } });
+      entrega = e
+        ? {
+            contenidoTexto: e.contenidoTexto,
+            tieneArchivo: !!e.archivoData,
+            nota: e.nota,
+            feedback: e.feedback,
+            entregadoAt: e.entregadoAt,
+          }
+        : null;
+    }
+
     res.json({
       sessionId: session.id,
       studentId,
@@ -349,6 +372,7 @@ sessionsRouter.get(
       total,
       correctas: attempts.filter((a) => a.correct).length,
       nota: total > 0 ? Math.round(((sumaPuntaje / total) * 20 + Number.EPSILON) * 100) / 100 : null,
+      entrega,
       respuestas: attempts.map((a) => {
         const seleccionadas = new Set(JSON.parse(a.selectedOptionIds) as string[]);
         return {

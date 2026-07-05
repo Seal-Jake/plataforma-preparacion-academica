@@ -12,7 +12,7 @@ import { ExportService } from '../../../core/services/export.service';
 import { RubricChart } from '../../../shared/components/rubric-chart/rubric-chart';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
-import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
+import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
 import { AcademicSession, Entrega, Enrollment, Question, RubricaResultado, StudentInfo, Unit } from '../../../core/models/models';
 
 type Tab = 'sesiones' | 'estudiantes' | 'exportar';
@@ -38,6 +38,7 @@ export class UnitDetail implements OnInit {
   ayudaTipoSesionFijo = ayudaTipoSesionFijo;
   esSesionDeEvidencia = esSesionDeEvidencia;
   etiquetaNivel = etiquetaNivel;
+  etiquetaCantidadPreguntas = etiquetaCantidadPreguntas;
 
   tab = signal<Tab>('sesiones');
   unit = signal<Unit | null>(null);

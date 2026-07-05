@@ -53,6 +53,7 @@ entregasRouter.put(
   asyncHandler(async (req, res) => {
     const session = await getSessionOrThrow(req.params.sessionId);
     await assertEnrolledForSession(req.user!.sub, session);
+    if (!session.abiertoParaTodos) throw badRequest('Esta entrega aún no ha sido habilitada por tu docente.');
 
     const { contenidoTexto } = req.body as { contenidoTexto?: string };
     const file = req.file;

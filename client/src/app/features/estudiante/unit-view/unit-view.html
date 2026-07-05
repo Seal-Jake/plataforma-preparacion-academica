@@ -15,7 +15,7 @@
   </section>
 
   <section class="card">
-    <h2 class="section-title"><app-icon name="exam" [size]="18" /> Sesiones asignadas</h2>
+    <h2 class="section-title"><app-icon name="exam" [size]="18" /> Examen y Proyecto de la Unidad</h2>
     @if (sessions().length > 0) {
       <table>
         <thead>
@@ -50,15 +50,15 @@
     } @else {
       <app-empty-state
         icon="exam"
-        title="No tienes sesiones asignadas todavía"
-        description="Cuando tu docente active un examen o tarea en esta unidad, aparecerá aquí."
+        title="Todavía no hay nada disponible"
+        description="Cuando tu docente active el Examen o el Proyecto de esta unidad, aparecerá aquí."
       />
     }
   </section>
 
   <section class="card">
     <h2 class="section-title"><app-icon name="folder" [size]="18" /> Temas de la unidad</h2>
-    <p class="muted">Explora el contenido de cada tema (Concepto y Marco Teórico, Mecánica y Ejemplos, Actividad Práctica, Aplicación a Economía y Administración) y marca las carpetas como completadas conforme avances.</p>
+    <p class="muted">Haz clic en un tema para ver su contenido (Concepto y Marco Teórico, Mecánica y Ejemplos, Actividad Práctica, Aplicación a Economía y Administración) y sus sesiones de Participación en Clase, Práctica y Participación Activa.</p>
     <ul class="topic-list">
       @for (t of u.topics; track t.id) {
         <li>
@@ -73,6 +73,38 @@
           </div>
           @if (expandedTopicId() === t.id) {
             <div class="topic-explorer">
+              @if (sesionesDeTema(t.id); as ts) {
+                <table class="topic-sessions">
+                  <thead>
+                    <tr>
+                      <th>Sesión</th>
+                      <th>Fecha límite</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (s of ts; track s.id) {
+                      <tr>
+                        <td>{{ s.title }}</td>
+                        <td>
+                          {{ s.dueDate ? (s.dueDate | date: 'short') : '—' }}
+                          @if (s.vencido) {
+                            <span class="badge danger"><app-icon name="alert-triangle" [size]="11" /> Vencido</span>
+                          }
+                        </td>
+                        <td>
+                          <span class="badge" [class.success]="s.estado === 'entregado'">{{ etiquetaEstadoSesion(s.estado || '') }}</span>
+                        </td>
+                        <td><button class="secondary small" (click)="abrirSesion(s)">
+                          <app-icon [name]="s.estado === 'entregado' ? 'file-text' : 'edit'" [size]="13" />
+                          {{ s.estado === 'entregado' ? 'Ver historial' : 'Resolver' }}
+                        </button></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
               <app-file-explorer [topicId]="t.id" modo="estudiante" />
             </div>
           }

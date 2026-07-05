@@ -110,6 +110,9 @@
         @if (d.preguntas.length === 0) {
           <button (click)="finish()"><app-icon name="upload" [size]="14" /> Entregar sesión</button>
         }
+        @if (entregaError()) {
+          <p class="error-text"><app-icon name="alert-triangle" [size]="13" /> {{ entregaError() }}</p>
+        }
       </div>
     }
   }

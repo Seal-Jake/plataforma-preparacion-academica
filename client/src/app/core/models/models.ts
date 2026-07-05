@@ -147,6 +147,13 @@ export interface SessionResult {
   total: number;
   correctas: number;
   nota: number | null;
+  entrega: {
+    contenidoTexto: string | null;
+    tieneArchivo: boolean;
+    nota: number | null;
+    feedback: string | null;
+    entregadoAt: string | null;
+  } | null;
   respuestas: {
     questionId: string;
     enunciado: string;
