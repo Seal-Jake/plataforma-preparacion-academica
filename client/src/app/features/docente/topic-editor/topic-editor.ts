@@ -51,6 +51,7 @@ export class TopicEditor implements OnInit {
   editingQuestion = signal<Question | null>(null);
   opcionesForm = signal<QuestionOption[]>([]);
   modoRespuestaForm = signal<ModoRespuesta>('opciones');
+  questionArchivo: File | null = null;
   questionForm = this.fb.group({
     enunciado: ['', Validators.required],
   });
@@ -132,6 +133,7 @@ export class TopicEditor implements OnInit {
     this.editingQuestion.set(null);
     this.questionForm.reset({ enunciado: '' });
     this.modoRespuestaForm.set('opciones');
+    this.questionArchivo = null;
     this.opcionesForm.set([
       { texto: '', esCorrecta: false },
       { texto: '', esCorrecta: false },
@@ -145,6 +147,7 @@ export class TopicEditor implements OnInit {
     this.editingQuestion.set(q);
     this.questionForm.reset({ enunciado: q.enunciado });
     this.modoRespuestaForm.set(q.modoRespuesta);
+    this.questionArchivo = null;
     this.opcionesForm.set(
       q.opciones.length
         ? q.opciones.map((o) => ({ ...o }))
@@ -160,6 +163,19 @@ export class TopicEditor implements OnInit {
 
   setModoRespuesta(modo: ModoRespuesta) {
     this.modoRespuestaForm.set(modo);
+  }
+
+  onQuestionArchivoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.questionArchivo = input.files?.[0] ?? null;
+  }
+
+  archivoPreguntaUrl(q: Question): string {
+    return this.questionsSvc.archivoUrl(q.id);
+  }
+
+  eliminarArchivoPregunta(q: Question, session: AcademicSession) {
+    this.questionsSvc.eliminarArchivo(q.id).subscribe(() => this.reloadSesionQuestions(session.id));
   }
 
   addOpcion() {
@@ -206,17 +222,31 @@ export class TopicEditor implements OnInit {
       opciones: modoRespuesta === 'opciones' ? this.opcionesForm() : [],
     } as unknown as Partial<Question>;
 
+    const archivo = this.questionArchivo;
+    const subirArchivoSiCorresponde = (questionId: string) =>
+      archivo ? this.questionsSvc.uploadArchivo(questionId, archivo) : null;
+
     if (editing) {
       this.questionsSvc.update(editing.id, payload).subscribe(() => {
-        this.showQuestionForm.set(false);
-        this.reloadSesionQuestions(session.id);
+        const subida = subirArchivoSiCorresponde(editing.id);
+        const listo = () => {
+          this.showQuestionForm.set(false);
+          this.reloadSesionQuestions(session.id);
+        };
+        if (subida) subida.subscribe(listo);
+        else listo();
       });
     } else {
       this.questionsSvc.create(payload).subscribe((created) => {
         this.sessionsSvc.update(session.id, { questionIds: [...session.questionIds, created.id] }).subscribe(() => {
-          this.showQuestionForm.set(false);
-          this.reloadSesionQuestions(session.id);
-          this.reloadSesiones();
+          const subida = subirArchivoSiCorresponde(created.id);
+          const listo = () => {
+            this.showQuestionForm.set(false);
+            this.reloadSesionQuestions(session.id);
+            this.reloadSesiones();
+          };
+          if (subida) subida.subscribe(listo);
+          else listo();
         });
       });
     }

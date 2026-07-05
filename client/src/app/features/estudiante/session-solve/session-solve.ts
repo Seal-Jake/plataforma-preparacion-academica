@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SessionsService } from '../../../core/services/sessions.service';
 import { EntregasService } from '../../../core/services/entregas.service';
+import { QuestionsService } from '../../../core/services/questions.service';
 import { Icon } from '../../../shared/components/icon/icon';
 import { etiquetaNivel, etiquetaSeccion, etiquetaTipoPregunta } from '../../../core/utils/labels';
 import { AcademicSession, Entrega, SessionQuestion, SessionQuestionsResponse } from '../../../core/models/models';
@@ -19,6 +20,7 @@ export class SessionSolve implements OnInit, OnDestroy {
   private router = inject(Router);
   private sessionsSvc = inject(SessionsService);
   private entregasSvc = inject(EntregasService);
+  private questionsSvc = inject(QuestionsService);
 
   etiquetaNivel = etiquetaNivel;
   etiquetaSeccion = etiquetaSeccion;
@@ -148,6 +150,10 @@ export class SessionSolve implements OnInit, OnDestroy {
       );
       this.data.set({ ...d, preguntas: updated });
     });
+  }
+
+  archivoEnunciadoUrl(questionId: string): string {
+    return this.questionsSvc.archivoUrl(questionId);
   }
 
   onRespuestaAbiertaArchivoSelected(event: Event) {

@@ -48,6 +48,12 @@
             }
           </div>
           <p class="enunciado">{{ q.enunciado }}</p>
+          @if (q.tieneArchivoEnunciado) {
+            <p class="field-hint">
+              <app-icon name="file-text" [size]="13" />
+              <a [href]="archivoEnunciadoUrl(q.questionId)" target="_blank" rel="noopener">Ver imagen/archivo del enunciado</a>
+            </p>
+          }
 
           @if (q.modoRespuesta === 'opciones') {
             <div class="opciones">

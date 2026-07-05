@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SessionsService } from '../../../core/services/sessions.service';
+import { QuestionsService } from '../../../core/services/questions.service';
 import { SessionResult } from '../../../core/models/models';
 import { Icon } from '../../../shared/components/icon/icon';
 import { etiquetaEstadoSesion } from '../../../core/utils/labels';
@@ -18,7 +19,8 @@ export class SessionHistory implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private sessionsSvc: SessionsService
+    private sessionsSvc: SessionsService,
+    private questionsSvc: QuestionsService
   ) {}
 
   private sessionId!: string;
@@ -30,5 +32,9 @@ export class SessionHistory implements OnInit {
 
   archivoRespuestaUrl(questionId: string): string {
     return this.sessionsSvc.archivoRespuestaUrl(this.sessionId, questionId);
+  }
+
+  archivoEnunciadoUrl(questionId: string): string {
+    return this.questionsSvc.archivoUrl(questionId);
   }
 }

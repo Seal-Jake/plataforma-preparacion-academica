@@ -6,7 +6,7 @@ import { validate } from '../lib/validate';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, forbidden } from '../lib/errors';
 import { LIMITE_TEXTO_CORTO } from '../lib/textLimits';
-import { CARPETAS_FIJAS } from '../lib/enums';
+import { crearCarpetasFijas } from '../lib/carpetasFijas';
 import { crearSesionesFijasTema } from '../lib/sesionesFijas';
 
 export const topicsRouter = Router();
@@ -46,9 +46,10 @@ topicsRouter.get(
   })
 );
 
-// Crea el tema y, de inmediato, sus 4 carpetas raíz fijas (Concepto y Marco
-// Teórico, Mecánica y Ejemplos, Actividad Práctica, Aplicación a la Economía
-// y Administración), tal como pide el diseño de "explorador de archivos".
+// Crea el tema y, de inmediato, su árbol de carpetas raíz fijas (Conceptos y
+// Marco Teórico, Mecánica y Ejemplos, Actividad Práctica con sus niveles,
+// Economía Aplicada con sus subcarpetas), tal como pide el diseño de
+// "explorador de archivos".
 topicsRouter.post(
   '/',
   requireAuth,
@@ -56,14 +57,7 @@ topicsRouter.post(
   validate(topicSchema),
   asyncHandler(async (req, res) => {
     const topic = await prisma.topic.create({ data: req.body });
-    await prisma.folder.createMany({
-      data: CARPETAS_FIJAS.map((carpeta, idx) => ({
-        topicId: topic.id,
-        nombre: carpeta.nombre,
-        tipoFijo: carpeta.tipoFijo,
-        orderIndex: idx,
-      })),
-    });
+    await crearCarpetasFijas(topic.id);
     await crearSesionesFijasTema(topic.id, topic.unitId);
     res.status(201).json(topic);
   })

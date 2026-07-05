@@ -37,4 +37,18 @@ export class QuestionsService {
   delete(id: string) {
     return this.http.delete<void>(`/api/questions/${id}`);
   }
+
+  uploadArchivo(id: string, archivo: File) {
+    const form = new FormData();
+    form.append('archivo', archivo);
+    return this.http.post<{ id: string; tieneArchivo: boolean }>(`/api/questions/${id}/archivo`, form);
+  }
+
+  eliminarArchivo(id: string) {
+    return this.http.delete<void>(`/api/questions/${id}/archivo`);
+  }
+
+  archivoUrl(id: string): string {
+    return `/api/questions/${id}/archivo`;
+  }
 }

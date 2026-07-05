@@ -95,7 +95,12 @@
                     <tbody>
                       @for (q of sesionQuestions(); track q.id) {
                         <tr>
-                          <td>{{ q.enunciado }}</td>
+                          <td>
+                            {{ q.enunciado }}
+                            @if (q.tieneArchivo) {
+                              <p class="field-hint"><app-icon name="file-text" [size]="12" /> <a [href]="archivoPreguntaUrl(q)" target="_blank" rel="noopener">Ver adjunto</a></p>
+                            }
+                          </td>
                           <td>{{ correctasTexto(q) }}</td>
                           <td class="actions">
                             <button class="secondary small" (click)="startEditQuestion(q)"><app-icon name="edit" [size]="13" /> Editar</button>
@@ -132,6 +137,18 @@
                     <div class="form-field">
                       <label>Enunciado</label>
                       <textarea formControlName="enunciado" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Imagen o archivo adjunto al enunciado (opcional)</label>
+                      <p class="field-hint"><app-icon name="info" [size]="13" /> Útil si no puedes escribir notación matemática como texto: sube una foto del problema.</p>
+                      @if (editingQuestion()?.tieneArchivo) {
+                        <p class="muted">
+                          <a [href]="archivoPreguntaUrl(editingQuestion()!)" target="_blank" rel="noopener">Ver adjunto actual</a>
+                          · <button type="button" class="danger small" (click)="eliminarArchivoPregunta(editingQuestion()!, s)">Quitar</button>
+                        </p>
+                      }
+                      <input type="file" (change)="onQuestionArchivoSelected($event)" />
                     </div>
 
                     <div class="fieldset-section">

@@ -74,12 +74,42 @@ export const PESOS_CURSO: Record<string, number> = {
 export interface CarpetaFija {
   tipoFijo: string;
   nombre: string;
+  children?: CarpetaFija[];
 }
 
-// Las 4 carpetas raíz que se crean automáticamente en todo tema nuevo.
+// Las 4 carpetas raíz que se crean automáticamente en todo tema nuevo, cada
+// una con su propio árbol de subcarpetas fijas (ninguna se puede renombrar,
+// mover ni eliminar; el docente solo agrega subcarpetas libres dentro).
 export const CARPETAS_FIJAS: CarpetaFija[] = [
-  { tipoFijo: 'concepto_teoria', nombre: 'Concepto y Marco Teórico' },
+  { tipoFijo: 'concepto_teoria', nombre: 'Conceptos y Marco Teórico' },
   { tipoFijo: 'mecanica_ejemplos', nombre: 'Mecánica y Ejemplos' },
-  { tipoFijo: 'actividad_practica', nombre: 'Actividad Práctica' },
-  { tipoFijo: 'aplicacion_economia', nombre: 'Aplicación a la Economía y Administración' },
+  {
+    tipoFijo: 'actividad_practica',
+    nombre: 'Actividad Práctica',
+    children: [
+      { tipoFijo: 'nivel_basico', nombre: 'Nivel Básico' },
+      { tipoFijo: 'nivel_estandar', nombre: 'Nivel Estándar' },
+      { tipoFijo: 'nivel_intermedio', nombre: 'Nivel Intermedio' },
+      { tipoFijo: 'nivel_deco', nombre: 'Nivel DECO' },
+      { tipoFijo: 'nivel_admision', nombre: 'Nivel Modelo de Admisión' },
+      { tipoFijo: 'retos_rm', nombre: 'Retos y R.M.' },
+    ],
+  },
+  {
+    tipoFijo: 'aplicacion_economia',
+    nombre: 'Economía Aplicada',
+    children: [
+      { tipoFijo: 'fundamentos_aplicaciones', nombre: 'Fundamentos y Aplicaciones' },
+      { tipoFijo: 'modelos_demostraciones', nombre: 'Modelos y Demostraciones' },
+      {
+        tipoFijo: 'analisis_propuesta_solucion',
+        nombre: 'Análisis, Propuesta y Solución',
+        children: [
+          { tipoFijo: 'estructura_clasica', nombre: 'Estructura Clásica' },
+          { tipoFijo: 'casos_reales', nombre: 'Casos Reales' },
+          { tipoFijo: 'analisis_solucion', nombre: 'Análisis y Solución' },
+        ],
+      },
+    ],
+  },
 ];

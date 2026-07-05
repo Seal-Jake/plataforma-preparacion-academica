@@ -186,7 +186,18 @@ sessionsRouter.get(
     const orderedIds: string[] = JSON.parse(state.questionOrder);
     const questions = await prisma.question.findMany({
       where: { id: { in: orderedIds } },
-      include: { opciones: true },
+      select: {
+        id: true,
+        section: true,
+        nivel: true,
+        tipo: true,
+        modoRespuesta: true,
+        enunciado: true,
+        archivoMimeType: true,
+        esModelo: true,
+        explicacion: true,
+        opciones: true,
+      },
     });
     const byId = new Map(questions.map((q) => [q.id, q]));
 
@@ -210,6 +221,7 @@ sessionsRouter.get(
             nivel: q.nivel,
             tipo: q.tipo,
             enunciado: q.enunciado,
+            tieneArchivoEnunciado: !!q.archivoMimeType,
             modoRespuesta: 'abierta' as const,
             opciones: [],
             multiCorrecta: false,
@@ -235,6 +247,7 @@ sessionsRouter.get(
           nivel: q.nivel,
           tipo: q.tipo,
           enunciado: q.enunciado,
+          tieneArchivoEnunciado: !!q.archivoMimeType,
           modoRespuesta: 'opciones' as const,
           opciones,
           multiCorrecta: q.opciones.filter((o) => o.esCorrecta).length > 1,
@@ -475,7 +488,11 @@ sessionsRouter.get(
     if (state) await autoSubmitIfExpired(state);
     const attempts = await prisma.attempt.findMany({
       where: { sessionId: session.id, studentId },
-      include: { question: { include: { opciones: true } } },
+      include: {
+        question: {
+          select: { enunciado: true, modoRespuesta: true, archivoMimeType: true, opciones: true },
+        },
+      },
       orderBy: { answeredAt: 'asc' },
     });
 
@@ -517,6 +534,7 @@ sessionsRouter.get(
           questionId: a.questionId,
           enunciado: a.question.enunciado,
           modoRespuesta: a.question.modoRespuesta,
+          tieneArchivoEnunciado: !!a.question.archivoMimeType,
           seleccion: a.question.opciones.filter((o) => seleccionadas.has(o.id)).map((o) => o.texto),
           respuestaTexto: a.respuestaTexto,
           tieneArchivo: !!a.archivoData,

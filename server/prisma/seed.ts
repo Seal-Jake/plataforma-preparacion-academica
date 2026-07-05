@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { CURRICULUM } from './curriculum';
-import { CARPETAS_FIJAS } from '../src/lib/enums';
+import { crearCarpetasFijas } from '../src/lib/carpetasFijas';
 import { crearSesionesFijasCurso, crearSesionesFijasUnidad, crearSesionesFijasTema } from '../src/lib/sesionesFijas';
 
 const prisma = new PrismaClient();
@@ -27,14 +27,7 @@ async function seedCurriculo() {
         const topic = await prisma.topic.create({
           data: { unitId: unit.id, name: topicName, orderIndex: topicIdx },
         });
-        await prisma.folder.createMany({
-          data: CARPETAS_FIJAS.map((carpeta, idx) => ({
-            topicId: topic.id,
-            nombre: carpeta.nombre,
-            tipoFijo: carpeta.tipoFijo,
-            orderIndex: idx,
-          })),
-        });
+        await crearCarpetasFijas(topic.id);
         await crearSesionesFijasTema(topic.id, unit.id);
       }
     }

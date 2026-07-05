@@ -56,7 +56,12 @@
         <tbody>
           @for (resp of r.respuestas; track resp.questionId) {
             <tr>
-              <td>{{ resp.enunciado }}</td>
+              <td>
+                {{ resp.enunciado }}
+                @if (resp.tieneArchivoEnunciado) {
+                  <a [href]="archivoEnunciadoUrl(resp.questionId)" target="_blank" rel="noopener">(ver adjunto de la pregunta)</a>
+                }
+              </td>
               <td>
                 @if (resp.modoRespuesta === 'abierta') {
                   {{ resp.respuestaTexto || '(sin texto)' }}

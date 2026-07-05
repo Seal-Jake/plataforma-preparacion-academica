@@ -115,16 +115,18 @@ model FileItem {
 }
 
 model Question {
-  id            String   @id @default(cuid())
-  topicId       String
-  section       String
-  nivel         String
-  tipo          String
-  modoRespuesta String   @default("opciones") // "opciones" (alternativas, autocorregible) | "abierta" (texto/archivo, calificación manual)
-  enunciado     String
-  explicacion   String?
-  esModelo      Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id              String   @id @default(cuid())
+  topicId         String
+  section         String
+  nivel           String
+  tipo            String
+  modoRespuesta   String   @default("opciones") // "opciones" (alternativas, autocorregible) | "abierta" (texto/archivo, calificación manual)
+  enunciado       String
+  archivoData     Bytes? // imagen/archivo adjunto al enunciado (ej. foto de un problema con notación matemática)
+  archivoMimeType String?
+  explicacion     String?
+  esModelo        Boolean  @default(false)
+  createdAt       DateTime @default(now())
 
   topic    Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
   opciones QuestionOption[]

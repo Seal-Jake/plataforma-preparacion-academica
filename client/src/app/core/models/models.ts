@@ -93,6 +93,7 @@ export interface Question {
   tipo: TipoPregunta;
   modoRespuesta: ModoRespuesta;
   enunciado: string;
+  tieneArchivo: boolean;
   opciones: QuestionOption[];
   explicacion?: string | null;
   esModelo: boolean;
@@ -124,6 +125,7 @@ export interface SessionQuestion {
   nivel: Nivel;
   tipo: TipoPregunta;
   enunciado: string;
+  tieneArchivoEnunciado?: boolean;
   modoRespuesta: ModoRespuesta;
   opciones: { id: string; texto: string }[];
   multiCorrecta: boolean;
@@ -166,6 +168,7 @@ export interface SessionResult {
     questionId: string;
     enunciado: string;
     modoRespuesta: ModoRespuesta;
+    tieneArchivoEnunciado: boolean;
     seleccion: string[];
     respuestaTexto: string | null;
     tieneArchivo: boolean;
