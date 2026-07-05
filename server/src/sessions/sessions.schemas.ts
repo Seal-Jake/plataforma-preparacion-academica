@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LIMITE_TEXTO_CORTO } from '../lib/textLimits';
+import { LIMITE_INVESTIGACION, LIMITE_TEXTO_CORTO } from '../lib/textLimits';
 
 // Las sesiones ya no se crean libremente: cada tema/unidad/curso recibe
 // automáticamente sus sesiones fijas (ver TIPOS_SESION_FIJOS). El docente
@@ -17,6 +17,19 @@ export const sessionUpdateSchema = z.object({
 export const answerSchema = z.object({
   questionId: z.string().min(1),
   selectedOptionIds: z.array(z.string().min(1)).min(1).max(5),
+});
+
+// Preguntas de modoRespuesta="abierta": el alumno escribe texto y/o adjunta
+// un archivo (llega por separado como multipart, ver uploadDocument).
+export const answerAbiertaSchema = z.object({
+  questionId: z.string().min(1),
+  respuestaTexto: z.string().trim().max(LIMITE_INVESTIGACION).optional(),
+});
+
+// El docente califica manualmente una respuesta abierta (0-20, igual que una entrega).
+export const calificarAttemptSchema = z.object({
+  studentId: z.string().min(1),
+  nota: z.number().min(0).max(20),
 });
 
 export const toggleAperturaSchema = z.object({

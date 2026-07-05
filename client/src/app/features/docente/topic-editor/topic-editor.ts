@@ -10,12 +10,13 @@ import { EntregasService } from '../../../core/services/entregas.service';
 import { FileExplorer } from '../../../shared/components/file-explorer/file-explorer';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { CalificarAbiertas } from '../../../shared/components/calificar-abiertas/calificar-abiertas';
 import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
-import { AcademicSession, Entrega, Enrollment, Question, QuestionOption, Topic } from '../../../core/models/models';
+import { AcademicSession, Entrega, Enrollment, ModoRespuesta, Question, QuestionOption, Topic } from '../../../core/models/models';
 
 @Component({
   selector: 'app-topic-editor',
-  imports: [ReactiveFormsModule, RouterLink, FileExplorer, Icon, EmptyState, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, FileExplorer, Icon, EmptyState, DatePipe, CalificarAbiertas],
   templateUrl: './topic-editor.html',
   styleUrl: './topic-editor.css',
 })
@@ -45,9 +46,11 @@ export class TopicEditor implements OnInit {
   // Preguntas propias de la sesión que se está configurando (Participación
   // en Clase o Práctica): se crean directamente aquí, sin un banco aparte.
   sesionQuestions = signal<Question[]>([]);
+  showAbiertasPanel = signal(false);
   showQuestionForm = signal(false);
   editingQuestion = signal<Question | null>(null);
   opcionesForm = signal<QuestionOption[]>([]);
+  modoRespuestaForm = signal<ModoRespuesta>('opciones');
   questionForm = this.fb.group({
     enunciado: ['', Validators.required],
   });
@@ -91,6 +94,7 @@ export class TopicEditor implements OnInit {
       timeLimitMinutes: s.timeLimitMinutes ?? null,
     });
     this.showQuestionForm.set(false);
+    this.showAbiertasPanel.set(false);
     if (!esSesionDeEvidencia(s.tipoFijo)) {
       this.reloadSesionQuestions(s.id);
     }
@@ -98,6 +102,10 @@ export class TopicEditor implements OnInit {
 
   reloadSesionQuestions(sessionId: string) {
     this.questionsSvc.list({ sessionId }).subscribe((qs) => this.sesionQuestions.set(qs));
+  }
+
+  tieneAbiertas(): boolean {
+    return this.sesionQuestions().some((q) => q.modoRespuesta === 'abierta');
   }
 
   saveSessionEdit(s: AcademicSession) {
@@ -123,6 +131,7 @@ export class TopicEditor implements OnInit {
   startNewQuestion() {
     this.editingQuestion.set(null);
     this.questionForm.reset({ enunciado: '' });
+    this.modoRespuestaForm.set('opciones');
     this.opcionesForm.set([
       { texto: '', esCorrecta: false },
       { texto: '', esCorrecta: false },
@@ -135,8 +144,22 @@ export class TopicEditor implements OnInit {
   startEditQuestion(q: Question) {
     this.editingQuestion.set(q);
     this.questionForm.reset({ enunciado: q.enunciado });
-    this.opcionesForm.set(q.opciones.map((o) => ({ ...o })));
+    this.modoRespuestaForm.set(q.modoRespuesta);
+    this.opcionesForm.set(
+      q.opciones.length
+        ? q.opciones.map((o) => ({ ...o }))
+        : [
+            { texto: '', esCorrecta: false },
+            { texto: '', esCorrecta: false },
+            { texto: '', esCorrecta: false },
+            { texto: '', esCorrecta: false },
+          ]
+    );
     this.showQuestionForm.set(true);
+  }
+
+  setModoRespuesta(modo: ModoRespuesta) {
+    this.modoRespuestaForm.set(modo);
   }
 
   addOpcion() {
@@ -158,18 +181,30 @@ export class TopicEditor implements OnInit {
   }
 
   saveQuestion(session: AcademicSession) {
-    if (this.questionForm.invalid || this.opcionesForm().some((o) => !o.texto.trim())) {
+    if (this.questionForm.invalid) {
       this.questionForm.markAllAsTouched();
       return;
     }
-    if (!this.opcionesForm().some((o) => o.esCorrecta)) {
-      alert('Debe haber al menos una alternativa correcta.');
-      return;
+    const modoRespuesta = this.modoRespuestaForm();
+    if (modoRespuesta === 'opciones') {
+      if (this.opcionesForm().some((o) => !o.texto.trim())) {
+        this.questionForm.markAllAsTouched();
+        return;
+      }
+      if (!this.opcionesForm().some((o) => o.esCorrecta)) {
+        alert('Debe haber al menos una alternativa correcta.');
+        return;
+      }
     }
 
     const { enunciado } = this.questionForm.getRawValue();
     const editing = this.editingQuestion();
-    const payload = { enunciado, topicId: this.topicId, opciones: this.opcionesForm() } as unknown as Partial<Question>;
+    const payload = {
+      enunciado,
+      topicId: this.topicId,
+      modoRespuesta,
+      opciones: modoRespuesta === 'opciones' ? this.opcionesForm() : [],
+    } as unknown as Partial<Question>;
 
     if (editing) {
       this.questionsSvc.update(editing.id, payload).subscribe(() => {
@@ -196,6 +231,7 @@ export class TopicEditor implements OnInit {
   }
 
   correctasTexto(q: Question): string {
+    if (q.modoRespuesta === 'abierta') return 'Respuesta abierta (calificación manual)';
     return q.opciones
       .filter((o) => o.esCorrecta)
       .map((o) => o.texto)

@@ -49,34 +49,61 @@
           </div>
           <p class="enunciado">{{ q.enunciado }}</p>
 
-          <div class="opciones">
-            @for (opcion of q.opciones; track opcion.id) {
-              <button
-                class="opcion secondary"
-                [class.selected]="seleccionActual().has(opcion.id)"
-                [class.correct]="q.respondida && q.seleccionadas.includes(opcion.id) && q.puntajeObtenido === 1"
-                [disabled]="q.respondida"
-                (click)="toggleOpcion(opcion.id)"
-              >
-                <input type="checkbox" [checked]="seleccionActual().has(opcion.id)" [disabled]="q.respondida" />
-                {{ opcion.texto }}
+          @if (q.modoRespuesta === 'opciones') {
+            <div class="opciones">
+              @for (opcion of q.opciones; track opcion.id) {
+                <button
+                  class="opcion secondary"
+                  [class.selected]="seleccionActual().has(opcion.id)"
+                  [class.correct]="q.respondida && q.seleccionadas.includes(opcion.id) && q.puntajeObtenido === 1"
+                  [disabled]="q.respondida"
+                  (click)="toggleOpcion(opcion.id)"
+                >
+                  <input type="checkbox" [checked]="seleccionActual().has(opcion.id)" [disabled]="q.respondida" />
+                  {{ opcion.texto }}
+                </button>
+              }
+            </div>
+
+            @if (!q.respondida) {
+              <button class="responder-btn" [disabled]="seleccionActual().size === 0" (click)="responder()">
+                <app-icon name="check-circle" [size]="14" /> Responder
               </button>
             }
-          </div>
 
-          @if (!q.respondida) {
-            <button class="responder-btn" [disabled]="seleccionActual().size === 0" (click)="responder()">
-              <app-icon name="check-circle" [size]="14" /> Responder
+            @if (q.respondida) {
+              <p class="feedback" [class.correct]="q.puntajeObtenido === 1" [class.incorrect]="q.puntajeObtenido! < 1">
+                <app-icon [name]="q.puntajeObtenido === 1 ? 'check-circle' : 'alert-triangle'" [size]="14" />
+                {{ q.puntajeObtenido === 1 ? 'Correcto' : 'Puntaje parcial: ' + (q.puntajeObtenido! * 100).toFixed(0) + '%' }}
+              </p>
+              @if (q.explicacion) {
+                <p class="muted">Explicación: {{ q.explicacion }}</p>
+              }
+            }
+          } @else {
+            <p class="field-hint"><app-icon name="info" [size]="13" /> Escribe tu respuesta y/o adjunta un archivo. Tu docente la calificará manualmente.</p>
+            <textarea [(ngModel)]="respuestaAbiertaTexto" rows="5" placeholder="Escribe tu respuesta aquí (opcional si adjuntas un archivo)"></textarea>
+            <input type="file" (change)="onRespuestaAbiertaArchivoSelected($event)" />
+            @if (q.tieneArchivo) {
+              <p class="muted">
+                <app-icon name="file-text" [size]="13" /> Ya adjuntaste un archivo.
+                <a [href]="archivoRespuestaUrl(q.questionId)" target="_blank" rel="noopener">Ver archivo</a>
+              </p>
+            }
+            <button class="responder-btn" (click)="responderAbierta()">
+              <app-icon name="upload" [size]="14" /> Guardar respuesta
             </button>
-          }
-
-          @if (q.respondida) {
-            <p class="feedback" [class.correct]="q.puntajeObtenido === 1" [class.incorrect]="q.puntajeObtenido! < 1">
-              <app-icon [name]="q.puntajeObtenido === 1 ? 'check-circle' : 'alert-triangle'" [size]="14" />
-              {{ q.puntajeObtenido === 1 ? 'Correcto' : 'Puntaje parcial: ' + (q.puntajeObtenido! * 100).toFixed(0) + '%' }}
-            </p>
-            @if (q.explicacion) {
-              <p class="muted">Explicación: {{ q.explicacion }}</p>
+            @if (respuestaAbiertaGuardada()) {
+              <span class="badge success"><app-icon name="check-circle" [size]="11" /> Guardado</span>
+            }
+            @if (q.respondida) {
+              <p class="muted">
+                @if (q.calificado) {
+                  Calificado: <strong>{{ (q.puntajeObtenido! * 20).toFixed(1) }} / 20</strong>
+                } @else {
+                  Guardado. Pendiente de calificación por tu docente.
+                }
+              </p>
             }
           }
         </div>

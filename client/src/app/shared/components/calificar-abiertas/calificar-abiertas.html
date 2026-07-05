@@ -1,0 +1,41 @@
+<div class="calificar-abiertas">
+  <div class="form-field">
+    <label>Estudiante</label>
+    <select [ngModel]="selectedStudentId()" (ngModelChange)="selectStudent($event)">
+      @for (e of enrollments; track e.id) {
+        <option [value]="e.studentId">{{ e.student?.name }}</option>
+      }
+    </select>
+  </div>
+
+  @if (result(); as r) {
+    @if (respuestasAbiertas().length > 0) {
+      @for (resp of respuestasAbiertas(); track resp.questionId) {
+        <div class="respuesta-abierta-item">
+          <p class="enunciado">{{ resp.enunciado }}</p>
+          @if (resp.respuestaTexto) {
+            <p class="muted">{{ resp.respuestaTexto }}</p>
+          }
+          @if (resp.tieneArchivo) {
+            <p class="muted"><app-icon name="file-text" [size]="13" /> <a [href]="archivoUrl(resp.questionId)" target="_blank" rel="noopener">Ver archivo adjunto</a></p>
+          }
+          @if (!resp.respuestaTexto && !resp.tieneArchivo) {
+            <p class="muted">El estudiante todavía no ha respondido esta pregunta.</p>
+          }
+          <div class="calificar-row">
+            <label>Nota (0-20)</label>
+            <input type="number" min="0" max="20" step="0.5" [(ngModel)]="notasEnEdicion[resp.questionId]" />
+            <button class="secondary small" (click)="guardarNota(resp.questionId)"><app-icon name="check-circle" [size]="13" /> Guardar</button>
+            @if (guardadoQuestionId() === resp.questionId) {
+              <span class="badge success">Guardado</span>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      <p class="muted">Esta sesión no tiene preguntas de respuesta abierta.</p>
+    }
+  } @else {
+    <p class="muted">Cargando respuestas...</p>
+  }
+</div>

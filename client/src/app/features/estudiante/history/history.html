@@ -14,7 +14,7 @@
       </div>
       <div>
         <span class="muted">Nota (0-20)</span>
-        <strong>{{ r.nota ?? '—' }}</strong>
+        <strong>{{ r.pendienteCalificacion ? 'Pendiente de calificación' : (r.nota ?? '—') }}</strong>
       </div>
     }
   </section>
@@ -57,11 +57,24 @@
           @for (resp of r.respuestas; track resp.questionId) {
             <tr>
               <td>{{ resp.enunciado }}</td>
-              <td>{{ resp.seleccion.join(', ') }}</td>
               <td>
-                <span class="badge" [class.success]="resp.correcta" [class.danger]="!resp.correcta">
-                  {{ resp.correcta ? 'Correcta' : ('Parcial: ' + (resp.puntaje * 100).toFixed(0) + '%') }}
-                </span>
+                @if (resp.modoRespuesta === 'abierta') {
+                  {{ resp.respuestaTexto || '(sin texto)' }}
+                  @if (resp.tieneArchivo) {
+                    <a [href]="archivoRespuestaUrl(resp.questionId)" target="_blank" rel="noopener">(ver archivo)</a>
+                  }
+                } @else {
+                  {{ resp.seleccion.join(', ') }}
+                }
+              </td>
+              <td>
+                @if (resp.puntaje === null) {
+                  <span class="badge">Pendiente de calificación</span>
+                } @else {
+                  <span class="badge" [class.success]="resp.correcta" [class.danger]="!resp.correcta">
+                    {{ resp.correcta ? 'Correcta' : ('Parcial: ' + (resp.puntaje * 100).toFixed(0) + '%') }}
+                  </span>
+                }
               </td>
               <td>{{ resp.answeredAt | date: 'short' }}</td>
             </tr>

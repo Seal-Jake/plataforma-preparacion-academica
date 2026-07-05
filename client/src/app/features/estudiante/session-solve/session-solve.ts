@@ -35,6 +35,11 @@ export class SessionSolve implements OnInit, OnDestroy {
 
   seleccionActual = signal<Set<string>>(new Set());
 
+  // Respuesta abierta (texto/archivo) de la pregunta actual, cuando modoRespuesta="abierta".
+  respuestaAbiertaTexto = '';
+  respuestaAbiertaArchivo: File | null = null;
+  respuestaAbiertaGuardada = signal(false);
+
   entrega = signal<Entrega | null>(null);
   entregaTexto = '';
   entregaArchivo: File | null = null;
@@ -95,6 +100,8 @@ export class SessionSolve implements OnInit, OnDestroy {
   private resetSeleccion() {
     const q = this.currentQuestion();
     this.seleccionActual.set(new Set(q?.seleccionadas ?? []));
+    this.respuestaAbiertaTexto = q?.respuestaTexto ?? '';
+    this.respuestaAbiertaArchivo = null;
   }
 
   private startTimer(deadlineAt: string) {
@@ -141,6 +148,35 @@ export class SessionSolve implements OnInit, OnDestroy {
       );
       this.data.set({ ...d, preguntas: updated });
     });
+  }
+
+  onRespuestaAbiertaArchivoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.respuestaAbiertaArchivo = input.files?.[0] ?? null;
+  }
+
+  archivoRespuestaUrl(questionId: string): string {
+    return this.sessionsSvc.archivoRespuestaUrl(this.sessionId, questionId);
+  }
+
+  responderAbierta() {
+    const q = this.currentQuestion();
+    if (!q || (!this.respuestaAbiertaTexto.trim() && !this.respuestaAbiertaArchivo && !q.tieneArchivo)) return;
+    this.sessionsSvc
+      .answerAbierta(this.sessionId, q.questionId, this.respuestaAbiertaTexto.trim() || null, this.respuestaAbiertaArchivo)
+      .subscribe((res) => {
+        const d = this.data();
+        if (!d) return;
+        const updated = d.preguntas.map((p) =>
+          p.questionId === q.questionId
+            ? { ...p, respondida: true, respuestaTexto: res.respuestaTexto, tieneArchivo: res.tieneArchivo }
+            : p
+        );
+        this.data.set({ ...d, preguntas: updated });
+        this.respuestaAbiertaArchivo = null;
+        this.respuestaAbiertaGuardada.set(true);
+        setTimeout(() => this.respuestaAbiertaGuardada.set(false), 2000);
+      });
   }
 
   siguiente() {

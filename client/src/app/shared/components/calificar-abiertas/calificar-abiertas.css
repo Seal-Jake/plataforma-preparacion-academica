@@ -1,0 +1,23 @@
+.calificar-abiertas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.respuesta-abierta-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+.respuesta-abierta-item .enunciado {
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+.calificar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.calificar-row input {
+  width: 5rem;
+}

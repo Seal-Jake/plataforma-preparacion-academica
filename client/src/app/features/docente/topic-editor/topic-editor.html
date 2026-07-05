@@ -115,6 +115,17 @@
                   />
                 }
 
+                @if (tieneAbiertas()) {
+                  <button class="secondary small" (click)="showAbiertasPanel.set(!showAbiertasPanel())">
+                    <app-icon name="edit" [size]="13" /> {{ showAbiertasPanel() ? 'Ocultar' : 'Calificar' }} respuestas abiertas
+                  </button>
+                  @if (showAbiertasPanel()) {
+                    <div class="card">
+                      <app-calificar-abiertas [sessionId]="s.id" [enrollments]="enrollments()" />
+                    </div>
+                  }
+                }
+
                 @if (showQuestionForm()) {
                   <form class="card question-form" [formGroup]="questionForm" (ngSubmit)="saveQuestion(s)">
                     <h3>{{ editingQuestion() ? 'Editar pregunta' : 'Nueva pregunta' }}</h3>
@@ -124,21 +135,39 @@
                     </div>
 
                     <div class="fieldset-section">
-                      <p class="fieldset-title"><app-icon name="check-circle" [size]="14" /> Alternativas</p>
-                      <p class="field-hint" style="margin-bottom: 0.6rem;"><app-icon name="info" [size]="13" /> Marca la casilla de cada alternativa correcta (puede ser una o varias).</p>
-                      @for (op of opcionesForm(); track $index; let i = $index) {
-                        <div class="opcion-row">
-                          <input type="checkbox" [checked]="op.esCorrecta" (change)="toggleOpcionCorrecta(i)" title="Marcar como correcta" />
-                          <input [value]="op.texto" (input)="updateOpcionTexto(i, $any($event.target).value)" [placeholder]="'Alternativa ' + (i + 1)" />
-                          @if (opcionesForm().length > 4) {
-                            <button type="button" class="danger small" (click)="removeOpcion(i)">×</button>
-                          }
-                        </div>
-                      }
-                      @if (opcionesForm().length < 5) {
-                        <button type="button" class="secondary small" (click)="addOpcion()"><app-icon name="plus" [size]="13" /> Añadir alternativa</button>
-                      }
+                      <p class="fieldset-title"><app-icon name="edit" [size]="14" /> Tipo de respuesta</p>
+                      <div class="modo-respuesta-row">
+                        <label class="pick-item">
+                          <input type="radio" name="modoRespuesta" [checked]="modoRespuestaForm() === 'opciones'" (change)="setModoRespuesta('opciones')" />
+                          <span>Alternativas (opción múltiple, se corrige sola)</span>
+                        </label>
+                        <label class="pick-item">
+                          <input type="radio" name="modoRespuesta" [checked]="modoRespuestaForm() === 'abierta'" (change)="setModoRespuesta('abierta')" />
+                          <span>Respuesta abierta: el alumno escribe texto y/o sube un archivo; tú la calificas manualmente</span>
+                        </label>
+                      </div>
                     </div>
+
+                    @if (modoRespuestaForm() === 'opciones') {
+                      <div class="fieldset-section">
+                        <p class="fieldset-title"><app-icon name="check-circle" [size]="14" /> Alternativas</p>
+                        <p class="field-hint" style="margin-bottom: 0.6rem;"><app-icon name="info" [size]="13" /> Marca la casilla de cada alternativa correcta (puede ser una o varias).</p>
+                        @for (op of opcionesForm(); track $index; let i = $index) {
+                          <div class="opcion-row">
+                            <input type="checkbox" [checked]="op.esCorrecta" (change)="toggleOpcionCorrecta(i)" title="Marcar como correcta" />
+                            <input [value]="op.texto" (input)="updateOpcionTexto(i, $any($event.target).value)" [placeholder]="'Alternativa ' + (i + 1)" />
+                            @if (opcionesForm().length > 4) {
+                              <button type="button" class="danger small" (click)="removeOpcion(i)">×</button>
+                            }
+                          </div>
+                        }
+                        @if (opcionesForm().length < 5) {
+                          <button type="button" class="secondary small" (click)="addOpcion()"><app-icon name="plus" [size]="13" /> Añadir alternativa</button>
+                        }
+                      </div>
+                    } @else {
+                      <p class="field-hint"><app-icon name="info" [size]="13" /> El alumno verá un cuadro de texto y un botón para adjuntar un archivo. Podrás calificarla manualmente (0-20) desde "Ver entregas".</p>
+                    }
 
                     <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar pregunta</button>
                     <button type="button" class="secondary" (click)="showQuestionForm.set(false)">Cancelar</button>

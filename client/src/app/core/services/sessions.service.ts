@@ -57,6 +57,29 @@ export class SessionsService {
     );
   }
 
+  answerAbierta(id: string, questionId: string, respuestaTexto: string | null, archivo: File | null) {
+    const form = new FormData();
+    form.append('questionId', questionId);
+    if (respuestaTexto) form.append('respuestaTexto', respuestaTexto);
+    if (archivo) form.append('archivo', archivo);
+    return this.http.patch<{ respuestaTexto: string | null; tieneArchivo: boolean }>(
+      `/api/sessions/${id}/answer-abierta`,
+      form
+    );
+  }
+
+  archivoRespuestaUrl(sessionId: string, questionId: string, studentId?: string) {
+    const suffix = studentId ? `?studentId=${studentId}` : '';
+    return `/api/sessions/${sessionId}/attempts/${questionId}/archivo${suffix}`;
+  }
+
+  calificarRespuesta(sessionId: string, questionId: string, studentId: string, nota: number) {
+    return this.http.patch<{ puntaje: number; correct: boolean }>(
+      `/api/sessions/${sessionId}/attempts/${questionId}/calificar`,
+      { studentId, nota }
+    );
+  }
+
   finish(id: string) {
     return this.http.post(`/api/sessions/${id}/finish`, {});
   }

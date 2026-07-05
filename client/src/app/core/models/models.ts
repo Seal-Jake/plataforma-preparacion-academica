@@ -83,12 +83,15 @@ export interface QuestionOption {
   orderIndex?: number;
 }
 
+export type ModoRespuesta = 'opciones' | 'abierta';
+
 export interface Question {
   id: string;
   topicId: string;
   section: Seccion;
   nivel: Nivel;
   tipo: TipoPregunta;
+  modoRespuesta: ModoRespuesta;
   enunciado: string;
   opciones: QuestionOption[];
   explicacion?: string | null;
@@ -121,11 +124,15 @@ export interface SessionQuestion {
   nivel: Nivel;
   tipo: TipoPregunta;
   enunciado: string;
+  modoRespuesta: ModoRespuesta;
   opciones: { id: string; texto: string }[];
   multiCorrecta: boolean;
   respondida: boolean;
   seleccionadas: string[];
+  respuestaTexto?: string | null;
+  tieneArchivo?: boolean;
   puntajeObtenido?: number;
+  calificado?: boolean;
   explicacion?: string;
 }
 
@@ -147,6 +154,7 @@ export interface SessionResult {
   total: number;
   correctas: number;
   nota: number | null;
+  pendienteCalificacion: boolean;
   entrega: {
     contenidoTexto: string | null;
     tieneArchivo: boolean;
@@ -157,9 +165,12 @@ export interface SessionResult {
   respuestas: {
     questionId: string;
     enunciado: string;
+    modoRespuesta: ModoRespuesta;
     seleccion: string[];
-    puntaje: number;
-    correcta: boolean;
+    respuestaTexto: string | null;
+    tieneArchivo: boolean;
+    puntaje: number | null;
+    correcta: boolean | null;
     answeredAt: string;
   }[];
 }

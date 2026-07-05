@@ -54,10 +54,13 @@ questionsRouter.post(
   validate(questionSchema),
   asyncHandler(async (req, res) => {
     const { opciones, ...rest } = req.body;
+    const opcionesACrear = rest.modoRespuesta === 'abierta' ? [] : opciones ?? [];
     const question = await prisma.question.create({
       data: {
         ...rest,
-        opciones: { create: opciones.map((o: { texto: string; esCorrecta: boolean }, idx: number) => ({ ...o, orderIndex: idx })) },
+        opciones: {
+          create: opcionesACrear.map((o: { texto: string; esCorrecta: boolean }, idx: number) => ({ ...o, orderIndex: idx })),
+        },
       },
       include: { opciones: true },
     });
@@ -72,15 +75,17 @@ questionsRouter.put(
   validate(questionUpdateSchema),
   asyncHandler(async (req, res) => {
     const { opciones, ...rest } = req.body;
-    if (opciones) {
+    const pasaAAbierta = rest.modoRespuesta === 'abierta';
+    if (opciones || pasaAAbierta) {
       await prisma.questionOption.deleteMany({ where: { questionId: req.params.id } });
     }
+    const opcionesACrear = pasaAAbierta ? undefined : opciones;
     const question = await prisma.question.update({
       where: { id: req.params.id },
       data: {
         ...rest,
-        ...(opciones && {
-          opciones: { create: opciones.map((o: { texto: string; esCorrecta: boolean }, idx: number) => ({ ...o, orderIndex: idx })) },
+        ...(opcionesACrear && {
+          opciones: { create: opcionesACrear.map((o: { texto: string; esCorrecta: boolean }, idx: number) => ({ ...o, orderIndex: idx })) },
         }),
       },
       include: { opciones: true },

@@ -115,15 +115,16 @@ model FileItem {
 }
 
 model Question {
-  id          String   @id @default(cuid())
-  topicId     String
-  section     String
-  nivel       String
-  tipo        String
-  enunciado   String
-  explicacion String?
-  esModelo    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  topicId       String
+  section       String
+  nivel         String
+  tipo          String
+  modoRespuesta String   @default("opciones") // "opciones" (alternativas, autocorregible) | "abierta" (texto/archivo, calificación manual)
+  enunciado     String
+  explicacion   String?
+  esModelo      Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   topic    Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
   opciones QuestionOption[]
@@ -212,10 +213,13 @@ model Attempt {
   sessionId         String
   studentId         String
   questionId        String
-  selectedOptionIds String // JSON array de ids de QuestionOption elegidos
+  selectedOptionIds String // JSON array de ids de QuestionOption elegidos ("[]" si es de respuesta abierta)
   shownOptionOrder  String // JSON array de ids de QuestionOption, orden mostrado (auditoría)
-  puntaje           Float // 0..1, parcial: correctas marcadas / total correctas
-  correct           Boolean // atajo: puntaje === 1
+  respuestaTexto    String? // respuesta de texto libre, solo preguntas de modoRespuesta="abierta"
+  archivoData       Bytes? // archivo adjunto, solo preguntas de modoRespuesta="abierta"
+  archivoMimeType   String?
+  puntaje           Float? // 0..1, parcial. Null = todavía sin calificar (preguntas abiertas antes de que el docente las revise)
+  correct           Boolean? // atajo: puntaje === 1. Null mientras no se haya calificado
   answeredAt        DateTime @default(now())
 
   session  AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)

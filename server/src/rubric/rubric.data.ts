@@ -21,8 +21,14 @@ async function notaSesionParaEstudiante(session: AcademicSession, studentId: str
     });
     if (state) {
       const attempts = await prisma.attempt.findMany({ where: { sessionId: session.id, studentId } });
-      const sumaPuntaje = attempts.reduce((acc, a) => acc + a.puntaje, 0);
-      notaAciertos = (sumaPuntaje / questionIds.length) * 20;
+      // Mientras haya una respuesta abierta (texto/archivo) que el docente
+      // todavía no calificó, no se sabe su puntaje real: no se trata como 0,
+      // se deja la sesión entera sin nota hasta que exista ese dato.
+      const pendienteCalificacion = attempts.some((a) => a.puntaje === null);
+      if (!pendienteCalificacion) {
+        const sumaPuntaje = attempts.reduce((acc, a) => acc + (a.puntaje ?? 0), 0);
+        notaAciertos = (sumaPuntaje / questionIds.length) * 20;
+      }
     }
   }
 

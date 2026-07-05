@@ -105,6 +105,9 @@
                         <label class="pick-item">
                           <input type="checkbox" [checked]="selectedQuestionIds().has(q.id)" (change)="toggleQuestion(q.id)" />
                           <span>{{ q.enunciado }}</span>
+                          @if (q.modoRespuesta === 'abierta') {
+                            <span class="badge warning">Abierta</span>
+                          }
                           <span class="badge">{{ etiquetaNivel(q.nivel) }}</span>
                         </label>
                       }
@@ -119,6 +122,17 @@
               <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
               <button type="button" class="secondary" (click)="editingSessionId.set(null)">Cancelar</button>
             </form>
+
+            @if (tieneAbiertas()) {
+              <button class="secondary small" (click)="showAbiertasPanel.set(!showAbiertasPanel())">
+                <app-icon name="edit" [size]="13" /> {{ showAbiertasPanel() ? 'Ocultar' : 'Calificar' }} respuestas abiertas
+              </button>
+              @if (showAbiertasPanel()) {
+                <div class="card">
+                  <app-calificar-abiertas [sessionId]="sid" [enrollments]="enrollments()" />
+                </div>
+              }
+            }
           }
         }
       }

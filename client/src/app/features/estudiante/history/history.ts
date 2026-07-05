@@ -21,8 +21,14 @@ export class SessionHistory implements OnInit {
     private sessionsSvc: SessionsService
   ) {}
 
+  private sessionId!: string;
+
   ngOnInit() {
-    const sessionId = this.route.snapshot.paramMap.get('sessionId')!;
-    this.sessionsSvc.result(sessionId).subscribe((r) => this.result.set(r));
+    this.sessionId = this.route.snapshot.paramMap.get('sessionId')!;
+    this.sessionsSvc.result(this.sessionId).subscribe((r) => this.result.set(r));
+  }
+
+  archivoRespuestaUrl(questionId: string): string {
+    return this.sessionsSvc.archivoRespuestaUrl(this.sessionId, questionId);
   }
 }

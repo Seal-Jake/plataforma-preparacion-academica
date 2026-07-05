@@ -9,12 +9,13 @@ import { EnrollmentsService } from '../../../core/services/enrollments.service';
 import { EntregasService } from '../../../core/services/entregas.service';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { CalificarAbiertas } from '../../../shared/components/calificar-abiertas/calificar-abiertas';
 import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
 import { AcademicSession, Course, Entrega, Enrollment, Question, Topic } from '../../../core/models/models';
 
 @Component({
   selector: 'app-course-detail',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, Icon, EmptyState, DatePipe],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, Icon, EmptyState, DatePipe, CalificarAbiertas],
   templateUrl: './course-detail.html',
   styleUrl: './course-detail.css',
 })
@@ -42,6 +43,8 @@ export class CourseDetail implements OnInit {
   topicFilter = signal<string>('');
   availableQuestions = signal<Question[]>([]);
   selectedQuestionIds = signal<Set<string>>(new Set());
+  assignedQuestions = signal<Question[]>([]);
+  showAbiertasPanel = signal(false);
   sessionEditForm = this.fb.group({
     dueDate: [''],
     timeLimitMinutes: [null as number | null],
@@ -82,6 +85,15 @@ export class CourseDetail implements OnInit {
     this.selectedQuestionIds.set(new Set(s.questionIds));
     this.topicFilter.set('');
     this.availableQuestions.set([]);
+    this.showAbiertasPanel.set(false);
+    this.assignedQuestions.set([]);
+    if (!esSesionDeEvidencia(s.tipoFijo)) {
+      this.questionsSvc.list({ sessionId: s.id }).subscribe((qs) => this.assignedQuestions.set(qs));
+    }
+  }
+
+  tieneAbiertas(): boolean {
+    return this.assignedQuestions().some((q) => q.modoRespuesta === 'abierta');
   }
 
   onTopicFilterChange(topicId: string) {

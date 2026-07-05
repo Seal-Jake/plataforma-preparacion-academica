@@ -12,6 +12,7 @@ import { ExportService } from '../../../core/services/export.service';
 import { RubricChart } from '../../../shared/components/rubric-chart/rubric-chart';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { CalificarAbiertas } from '../../../shared/components/calificar-abiertas/calificar-abiertas';
 import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
 import { AcademicSession, Entrega, Enrollment, Question, RubricaResultado, StudentInfo, Unit } from '../../../core/models/models';
 
@@ -19,7 +20,7 @@ type Tab = 'sesiones' | 'estudiantes' | 'exportar';
 
 @Component({
   selector: 'app-unit-detail',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, RubricChart, DatePipe, Icon, EmptyState],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, RubricChart, DatePipe, Icon, EmptyState, CalificarAbiertas],
   templateUrl: './unit-detail.html',
   styleUrl: './unit-detail.css',
 })
@@ -50,6 +51,8 @@ export class UnitDetail implements OnInit {
   topicFilter = signal<string>('');
   availableQuestions = signal<Question[]>([]);
   selectedQuestionIds = signal<Set<string>>(new Set());
+  assignedQuestions = signal<Question[]>([]);
+  showAbiertasPanel = signal(false);
 
   selectedStudentId = signal<string | null>(null);
   selectedStudentRubrica = signal<RubricaResultado | null>(null);
@@ -112,6 +115,15 @@ export class UnitDetail implements OnInit {
     this.selectedQuestionIds.set(new Set(s.questionIds));
     this.topicFilter.set('');
     this.availableQuestions.set([]);
+    this.showAbiertasPanel.set(false);
+    this.assignedQuestions.set([]);
+    if (!esSesionDeEvidencia(s.tipoFijo)) {
+      this.questionsSvc.list({ sessionId: s.id }).subscribe((qs) => this.assignedQuestions.set(qs));
+    }
+  }
+
+  tieneAbiertas(): boolean {
+    return this.assignedQuestions().some((q) => q.modoRespuesta === 'abierta');
   }
 
   onTopicFilterChange(topicId: string) {
