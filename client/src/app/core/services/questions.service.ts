@@ -3,7 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Nivel, Question, Seccion, TipoPregunta } from '../models/models';
 
 export interface QuestionFilter {
-  topicId: string;
+  topicId?: string;
+  sessionId?: string;
   nivel?: Nivel;
   tipo?: TipoPregunta;
   section?: Seccion;
@@ -15,7 +16,9 @@ export class QuestionsService {
   constructor(private http: HttpClient) {}
 
   list(filter: QuestionFilter) {
-    const params: Record<string, string> = { topicId: filter.topicId };
+    const params: Record<string, string> = {};
+    if (filter.topicId) params['topicId'] = filter.topicId;
+    if (filter.sessionId) params['sessionId'] = filter.sessionId;
     if (filter.nivel) params['nivel'] = filter.nivel;
     if (filter.tipo) params['tipo'] = filter.tipo;
     if (filter.section) params['section'] = filter.section;
@@ -33,12 +36,5 @@ export class QuestionsService {
 
   delete(id: string) {
     return this.http.delete<void>(`/api/questions/${id}`);
-  }
-
-  importCsv(topicId: string, csv: string) {
-    return this.http.post<{ importadas: number; errores: { fila: number; error: string }[] }>(
-      '/api/questions/import',
-      { topicId, csv }
-    );
   }
 }

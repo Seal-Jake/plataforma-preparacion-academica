@@ -8,8 +8,9 @@
   <section class="card">
     <h2 class="section-title"><app-icon name="exam" [size]="18" /> Sesiones fijas del tema</h2>
     <p class="muted">
-      Todo tema tiene siempre estas 3 sesiones fijas. Configúralas con preguntas de este mismo tema (Participación en
-      Clase y Práctica) o actívalas para que los alumnos entreguen su evidencia (Participación Activa).
+      Todo tema tiene siempre estas 3 sesiones fijas. En Participación en Clase y Práctica creas las preguntas
+      directamente aquí (no hay un banco aparte). En Participación Activa, activas la sesión para que los alumnos
+      entreguen su evidencia.
     </p>
 
     @if (sesiones().length > 0) {
@@ -53,47 +54,99 @@
     @if (editingSessionId(); as sid) {
       @for (s of sesiones(); track s.id) {
         @if (s.id === sid) {
-          <form class="card session-form" [formGroup]="sessionEditForm" (ngSubmit)="saveSessionEdit(s)">
-            <h3>Configurar: {{ etiquetaTipoSesionFijo(s.tipoFijo) }}</h3>
-            <div class="grid-2">
-              <div class="form-field">
-                <label>Fecha límite (opcional)</label>
-                <input type="datetime-local" formControlName="dueDate" />
-                @if (s.tipoFijo === 'participacion_activa') {
-                  <p class="field-hint"><app-icon name="info" [size]="13" /> Si la dejas vacía, se fija automáticamente a 120 horas desde que la abras.</p>
+          <div class="card session-form">
+            <form [formGroup]="sessionEditForm" (ngSubmit)="saveSessionEdit(s)">
+              <h3>Configurar: {{ etiquetaTipoSesionFijo(s.tipoFijo) }}</h3>
+              <div class="grid-2">
+                <div class="form-field">
+                  <label>Fecha límite (opcional)</label>
+                  <input type="datetime-local" formControlName="dueDate" />
+                  @if (s.tipoFijo === 'participacion_activa') {
+                    <p class="field-hint"><app-icon name="info" [size]="13" /> Si la dejas vacía, se fija automáticamente a 120 horas desde que la abras.</p>
+                  }
+                </div>
+                @if (!esSesionDeEvidencia(s.tipoFijo)) {
+                  <div class="form-field">
+                    <label>Tiempo límite (minutos, opcional)</label>
+                    <input type="number" formControlName="timeLimitMinutes" min="1" />
+                  </div>
                 }
               </div>
-              @if (!esSesionDeEvidencia(s.tipoFijo)) {
-                <div class="form-field">
-                  <label>Tiempo límite (minutos, opcional)</label>
-                  <input type="number" formControlName="timeLimitMinutes" min="1" />
-                </div>
-              }
-            </div>
+              <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
+              <button type="button" class="secondary" (click)="editingSessionId.set(null)">Cancelar</button>
+            </form>
 
             @if (!esSesionDeEvidencia(s.tipoFijo)) {
               <div class="fieldset-section">
-                <p class="fieldset-title"><app-icon name="book-open" [size]="14" /> Preguntas de este tema</p>
-                @if (questions().length > 0) {
-                  <div class="question-picker">
-                    @for (q of questions(); track q.id) {
-                      <label class="pick-item">
-                        <input type="checkbox" [checked]="selectedQuestionIds().has(q.id)" (change)="toggleQuestionForSession(q.id)" />
-                        <span>{{ q.enunciado }}</span>
-                        <span class="badge">{{ etiquetaNivel(q.nivel) }}</span>
-                      </label>
-                    }
-                  </div>
-                  <p class="muted">{{ selectedQuestionIds().size }} pregunta(s) seleccionada(s)</p>
+                <div class="section-header">
+                  <p class="fieldset-title"><app-icon name="book-open" [size]="14" /> Preguntas de {{ etiquetaTipoSesionFijo(s.tipoFijo) }}</p>
+                  <button type="button" class="secondary small" (click)="startNewQuestion()"><app-icon name="plus" [size]="13" /> Nueva pregunta</button>
+                </div>
+
+                @if (sesionQuestions().length > 0) {
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Enunciado</th>
+                        <th>Correcta(s)</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (q of sesionQuestions(); track q.id) {
+                        <tr>
+                          <td>{{ q.enunciado }}</td>
+                          <td>{{ correctasTexto(q) }}</td>
+                          <td class="actions">
+                            <button class="secondary small" (click)="startEditQuestion(q)"><app-icon name="edit" [size]="13" /> Editar</button>
+                            <button class="danger small" (click)="deleteQuestion(q, s)"><app-icon name="trash" [size]="13" /> Eliminar</button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
                 } @else {
-                  <p class="muted">Este tema todavía no tiene preguntas en su banco (más abajo en esta página).</p>
+                  <app-empty-state
+                    icon="file-text"
+                    title="Todavía no hay preguntas en esta sesión"
+                    description="Crea la primera pregunta directamente aquí."
+                    actionLabel="Crear la primera pregunta"
+                    (action)="startNewQuestion()"
+                  />
+                }
+
+                @if (showQuestionForm()) {
+                  <form class="card question-form" [formGroup]="questionForm" (ngSubmit)="saveQuestion(s)">
+                    <h3>{{ editingQuestion() ? 'Editar pregunta' : 'Nueva pregunta' }}</h3>
+                    <div class="form-field">
+                      <label>Enunciado</label>
+                      <textarea formControlName="enunciado" rows="3"></textarea>
+                    </div>
+
+                    <div class="fieldset-section">
+                      <p class="fieldset-title"><app-icon name="check-circle" [size]="14" /> Alternativas</p>
+                      <p class="field-hint" style="margin-bottom: 0.6rem;"><app-icon name="info" [size]="13" /> Marca la casilla de cada alternativa correcta (puede ser una o varias).</p>
+                      @for (op of opcionesForm(); track $index; let i = $index) {
+                        <div class="opcion-row">
+                          <input type="checkbox" [checked]="op.esCorrecta" (change)="toggleOpcionCorrecta(i)" title="Marcar como correcta" />
+                          <input [value]="op.texto" (input)="updateOpcionTexto(i, $any($event.target).value)" [placeholder]="'Alternativa ' + (i + 1)" />
+                          @if (opcionesForm().length > 4) {
+                            <button type="button" class="danger small" (click)="removeOpcion(i)">×</button>
+                          }
+                        </div>
+                      }
+                      @if (opcionesForm().length < 5) {
+                        <button type="button" class="secondary small" (click)="addOpcion()"><app-icon name="plus" [size]="13" /> Añadir alternativa</button>
+                      }
+                    </div>
+
+                    <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar pregunta</button>
+                    <button type="button" class="secondary" (click)="showQuestionForm.set(false)">Cancelar</button>
+                  </form>
                 }
               </div>
             }
-
-            <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
-            <button type="button" class="secondary" (click)="editingSessionId.set(null)">Cancelar</button>
-          </form>
+          </div>
         }
       }
     }
@@ -149,182 +202,6 @@
       directamente dentro de cada una de las 4 carpetas fijas.
     </p>
     <app-file-explorer [topicId]="t.id" modo="docente" />
-  </section>
-
-  <section class="card">
-    <div class="section-header">
-      <h2 class="section-title"><app-icon name="file-text" [size]="18" /> Banco de preguntas ({{ t.questionCount ?? questions().length }})</h2>
-      @if (t.bancoInsuficiente) {
-        <span class="badge warning"><app-icon name="alert-triangle" [size]="12" /> Menos de {{ t.minimoRequerido }} preguntas: se recomienda ampliar el banco</span>
-      }
-    </div>
-
-    <div class="filters">
-      <select [ngModel]="filterNivel()" (ngModelChange)="filterNivel.set($event); reloadQuestions()" [ngModelOptions]="{standalone: true}">
-        <option value="">Todos los niveles</option>
-        @for (n of nivelesOpciones; track n[0]) {
-          <option [value]="n[0]">{{ n[1] }}</option>
-        }
-      </select>
-      <select [ngModel]="filterTipo()" (ngModelChange)="filterTipo.set($event); reloadQuestions()" [ngModelOptions]="{standalone: true}">
-        <option value="">Todos los tipos</option>
-        @for (tp of tiposOpciones; track tp[0]) {
-          <option [value]="tp[0]">{{ tp[1] }}</option>
-        }
-      </select>
-      <select [ngModel]="filterSection()" (ngModelChange)="filterSection.set($event); reloadQuestions()" [ngModelOptions]="{standalone: true}">
-        <option value="">Ambas secciones</option>
-        @for (s of seccionesOpciones; track s[0]) {
-          <option [value]="s[0]">{{ s[1] }}</option>
-        }
-      </select>
-      <input
-        placeholder="Buscar en el enunciado..."
-        [ngModel]="filterText()"
-        (ngModelChange)="filterText.set($event); reloadQuestions()"
-        [ngModelOptions]="{ standalone: true }"
-      />
-      <button (click)="startNewQuestion()"><app-icon name="plus" [size]="14" /> Nueva pregunta</button>
-    </div>
-
-    @if (questions().length > 0) {
-      <table>
-        <thead>
-          <tr>
-            <th>Enunciado</th>
-            <th>Sección</th>
-            <th>Nivel</th>
-            <th>Correcta(s)</th>
-            <th>Modelo</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (q of questions(); track q.id) {
-            <tr>
-              <td>{{ q.enunciado }}</td>
-              <td>{{ etiquetaSeccion(q.section) }}</td>
-              <td>{{ etiquetaNivel(q.nivel) }}</td>
-              <td>{{ correctasTexto(q) }}</td>
-              <td>{{ q.esModelo ? 'Sí' : '' }}</td>
-              <td class="actions">
-                <button class="secondary small" (click)="startEditQuestion(q)"><app-icon name="edit" [size]="13" /> Editar</button>
-                <button class="danger small" (click)="deleteQuestion(q)"><app-icon name="trash" [size]="13" /> Eliminar</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    } @else {
-      <app-empty-state
-        icon="file-text"
-        title="No hay preguntas con estos filtros"
-        description="Crea una pregunta nueva o importa varias a la vez desde un archivo CSV más abajo."
-        actionLabel="Crear la primera pregunta"
-        (action)="startNewQuestion()"
-      />
-    }
-
-    @if (showQuestionForm()) {
-      <form class="card question-form" [formGroup]="questionForm" (ngSubmit)="saveQuestion()">
-        <h3>{{ editingQuestion() ? 'Editar pregunta' : 'Nueva pregunta' }}</h3>
-
-        <div class="fieldset-section">
-          <p class="fieldset-title"><app-icon name="info" [size]="14" /> Datos generales</p>
-          <div class="grid-2">
-            <div class="form-field">
-              <label>Sección</label>
-              <select formControlName="section">
-                @for (s of seccionesOpciones; track s[0]) {
-                  <option [value]="s[0]">{{ s[1] }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-field">
-              <label>Nivel</label>
-              <select formControlName="nivel">
-                @for (n of nivelesOpciones; track n[0]) {
-                  <option [value]="n[0]">{{ n[1] }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-field">
-              <label>Tipo</label>
-              <select formControlName="tipo">
-                @for (tp of tiposOpciones; track tp[0]) {
-                  <option [value]="tp[0]">{{ tp[1] }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-field">
-              <label>¿Es modelo (con explicación)?</label>
-              <select formControlName="esModelo">
-                <option [ngValue]="false">No</option>
-                <option [ngValue]="true">Sí</option>
-              </select>
-              <p class="field-hint"><app-icon name="info" [size]="13" /> Las preguntas modelo son las únicas que muestran el desarrollo resuelto al alumno.</p>
-            </div>
-          </div>
-          <div class="form-field">
-            <label>Enunciado</label>
-            <textarea formControlName="enunciado" rows="3"></textarea>
-          </div>
-        </div>
-
-        <div class="fieldset-section">
-          <p class="fieldset-title"><app-icon name="check-circle" [size]="14" /> Alternativas</p>
-          <p class="field-hint" style="margin-bottom: 0.6rem;"><app-icon name="info" [size]="13" /> Marca la casilla de cada alternativa correcta (puede ser una o varias).</p>
-          @for (op of opcionesForm(); track $index; let i = $index) {
-            <div class="opcion-row">
-              <input
-                type="checkbox"
-                [checked]="op.esCorrecta"
-                (change)="toggleOpcionCorrecta(i)"
-                title="Marcar como correcta"
-              />
-              <input
-                [value]="op.texto"
-                (input)="updateOpcionTexto(i, $any($event.target).value)"
-                [placeholder]="'Alternativa ' + (i + 1)"
-              />
-              @if (opcionesForm().length > 4) {
-                <button type="button" class="danger small" (click)="removeOpcion(i)">×</button>
-              }
-            </div>
-          }
-          @if (opcionesForm().length < 5) {
-            <button type="button" class="secondary small" (click)="addOpcion()"><app-icon name="plus" [size]="13" /> Añadir alternativa</button>
-          }
-        </div>
-
-        <div class="form-field">
-          <label>Explicación (solo se muestra si es modelo)</label>
-          <textarea formControlName="explicacion" rows="2"></textarea>
-        </div>
-        <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar pregunta</button>
-        <button type="button" class="secondary" (click)="showQuestionForm.set(false)">Cancelar</button>
-      </form>
-    }
-
-    <div class="card import-card">
-      <h3 class="section-title"><app-icon name="upload" [size]="16" /> Importar preguntas por CSV</h3>
-      <p class="muted">
-        Formato con separador "|": section|nivel|tipo|enunciado|opciones (separadas por ";")|correctas (letras A-E
-        separadas por ",")
-      </p>
-      <input type="file" accept=".csv,text/csv" (change)="onCsvFileSelected($event)" />
-      <button [disabled]="!csvText()" (click)="importCsv()"><app-icon name="upload" [size]="14" /> Importar</button>
-      @if (importResult(); as r) {
-        <p class="badge success"><app-icon name="check-circle" [size]="12" /> {{ r.importadas }} preguntas importadas</p>
-        @if (r.errores.length) {
-          <ul class="error-text">
-            @for (e of r.errores; track e.fila) {
-              <li>Fila {{ e.fila }}: {{ e.error }}</li>
-            }
-          </ul>
-        }
-      }
-    </div>
   </section>
 } @else {
   <p class="muted">Cargando tema...</p>

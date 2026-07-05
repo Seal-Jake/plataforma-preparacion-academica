@@ -5,7 +5,7 @@ import { asyncHandler } from '../lib/asyncHandler';
 import { validate } from '../lib/validate';
 import { loginSchema, registerStudentSchema } from './auth.schemas';
 import { clearSessionCookie, requireAuth, requireRole, setSessionCookie, signToken } from '../middleware/auth';
-import { unauthorized, conflict } from '../lib/errors';
+import { unauthorized, conflict, notFound, badRequest } from '../lib/errors';
 import { loginRateLimiter, registerRateLimiter } from '../middleware/rateLimit';
 
 export const authRouter = Router();
@@ -106,6 +106,21 @@ authRouter.get(
       orderBy: { name: 'asc' },
     });
     res.json(students);
+  })
+);
+
+// Elimina la cuenta de un estudiante por completo (todas sus matrículas,
+// intentos, entregas y progreso se borran en cascada). No se puede deshacer.
+authRouter.delete(
+  '/estudiantes/:id',
+  requireAuth,
+  requireRole('docente'),
+  asyncHandler(async (req, res) => {
+    const student = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!student) throw notFound('Estudiante');
+    if (student.role !== 'estudiante') throw badRequest('Ese usuario no es un estudiante.');
+    await prisma.user.delete({ where: { id: req.params.id } });
+    res.status(204).send();
   })
 );
 

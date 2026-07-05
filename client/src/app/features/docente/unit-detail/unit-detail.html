@@ -211,6 +211,7 @@
                 <td class="actions">
                   <button class="secondary small" (click)="verRubrica(e.studentId)"><app-icon name="chart" [size]="13" /> Ver rúbrica</button>
                   <button class="secondary small" (click)="exportarProgresoEstudiante(e.studentId)"><app-icon name="download" [size]="13" /> Descargar progreso</button>
+                  <button class="danger small" (click)="eliminarEstudiante(e.studentId)"><app-icon name="trash" [size]="13" /> Eliminar</button>
                 </td>
               </tr>
             }

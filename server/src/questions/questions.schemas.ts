@@ -7,11 +7,15 @@ const optionSchema = z.object({
   esCorrecta: z.boolean().default(false),
 });
 
+// section/nivel/tipo ya no los elige el docente al crear una pregunta (se
+// simplificó a un módulo pequeño por sesión): quedan con un valor por
+// defecto interno, solo relevante para el selector de preguntas de Examen
+// de Unidad / Examen Final (que sí muestra un badge de nivel).
 const questionBaseSchema = z.object({
   topicId: z.string().min(1),
-  section: z.enum(SECCIONES),
-  nivel: z.enum(NIVELES),
-  tipo: z.enum(TIPOS_PREGUNTA),
+  section: z.enum(SECCIONES).default('matematica'),
+  nivel: z.enum(NIVELES).default('basico'),
+  tipo: z.enum(TIPOS_PREGUNTA).default('operaciones'),
   enunciado: z.string().trim().min(1).max(LIMITE_ENUNCIADO),
   opciones: z.array(optionSchema).min(4).max(5),
   explicacion: z.string().trim().max(LIMITE_TEORIA).optional().nullable(),
@@ -28,43 +32,17 @@ export const questionUpdateSchema = questionBaseSchema.partial().refine(
   { message: 'Debe haber al menos una alternativa correcta.', path: ['opciones'] }
 );
 
-export const questionFilterSchema = z.object({
-  topicId: z.string().min(1),
-  nivel: z.enum(NIVELES).optional(),
-  tipo: z.enum(TIPOS_PREGUNTA).optional(),
-  section: z.enum(SECCIONES).optional(),
-  q: z.string().trim().max(LIMITE_ENUNCIADO).optional(),
-});
-
-export const importSchema = z.object({
-  topicId: z.string().min(1),
-  csv: z.string().min(1).max(2_000_000),
-});
-
-const LETRAS = ['A', 'B', 'C', 'D', 'E'];
-
-// Formato: section|nivel|tipo|enunciado|opciones (separadas por ";")|correctas (letras separadas por ",")
-export const csvRowSchema = z
+// Se filtra por topicId (todas las preguntas de un tema, usado por el
+// selector de Examen de Unidad / Examen Final) o por sessionId (solo las
+// preguntas ya asignadas a esa sesión puntual, usado por el módulo pequeño
+// de Participación en Clase / Práctica dentro de cada tema).
+export const questionFilterSchema = z
   .object({
-    section: z.enum(SECCIONES),
-    nivel: z.enum(NIVELES),
-    tipo: z.enum(TIPOS_PREGUNTA),
-    enunciado: z.string().trim().min(1).max(LIMITE_ENUNCIADO),
-    opciones: z.string().trim().min(1),
-    correctas: z.string().trim().min(1),
+    topicId: z.string().min(1).optional(),
+    sessionId: z.string().min(1).optional(),
+    nivel: z.enum(NIVELES).optional(),
+    tipo: z.enum(TIPOS_PREGUNTA).optional(),
+    section: z.enum(SECCIONES).optional(),
+    q: z.string().trim().max(LIMITE_ENUNCIADO).optional(),
   })
-  .transform((row) => {
-    const textos = row.opciones.split(';').map((t) => t.trim()).filter(Boolean);
-    const letrasCorrectas = row.correctas.split(',').map((l) => l.trim().toUpperCase());
-    const opciones = textos.map((texto, idx) => ({
-      texto,
-      esCorrecta: letrasCorrectas.includes(LETRAS[idx]),
-    }));
-    return { ...row, opciones };
-  })
-  .refine((row) => row.opciones.length >= 4 && row.opciones.length <= 5, {
-    message: 'Debe haber 4 o 5 alternativas separadas por ";"',
-  })
-  .refine((row) => row.opciones.some((o) => o.esCorrecta), {
-    message: 'Debe haber al menos una alternativa correcta válida (A-E)',
-  });
+  .refine((f) => !!f.topicId || !!f.sessionId, { message: 'Debes indicar topicId o sessionId.' });

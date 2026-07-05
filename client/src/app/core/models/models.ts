@@ -50,8 +50,6 @@ export interface Topic {
   orderIndex: number;
   subtemas?: string | null;
   questionCount?: number;
-  bancoInsuficiente?: boolean;
-  minimoRequerido?: number;
 }
 
 export interface FileItem {

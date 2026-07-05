@@ -16,8 +16,6 @@ export const TIPOS_PREGUNTA = [
 ] as const;
 export type TipoPregunta = (typeof TIPOS_PREGUNTA)[number];
 
-export const MIN_QUESTIONS_PER_TOPIC = 50;
-
 // Rúbrica fija de la plataforma (ya no configurable por el docente).
 // Cada tema/unidad/curso recibe automáticamente las sesiones fijas que le
 // corresponden a su nivel, y la nota final se calcula con los pesos de

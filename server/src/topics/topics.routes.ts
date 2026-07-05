@@ -6,7 +6,7 @@ import { validate } from '../lib/validate';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, forbidden } from '../lib/errors';
 import { LIMITE_TEXTO_CORTO } from '../lib/textLimits';
-import { CARPETAS_FIJAS, MIN_QUESTIONS_PER_TOPIC } from '../lib/enums';
+import { CARPETAS_FIJAS } from '../lib/enums';
 import { crearSesionesFijasTema } from '../lib/sesionesFijas';
 
 export const topicsRouter = Router();
@@ -40,12 +40,7 @@ topicsRouter.get(
 
     if (req.user!.role === 'docente') {
       const questionCount = await prisma.question.count({ where: { topicId: topic.id } });
-      return res.json({
-        ...topic,
-        questionCount,
-        bancoInsuficiente: questionCount < MIN_QUESTIONS_PER_TOPIC,
-        minimoRequerido: MIN_QUESTIONS_PER_TOPIC,
-      });
+      return res.json({ ...topic, questionCount });
     }
     res.json(topic);
   })

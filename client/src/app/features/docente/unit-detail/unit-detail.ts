@@ -190,6 +190,16 @@ export class UnitDetail implements OnInit {
     this.exportSvc.exportUnitProgresoPdf(this.unitId, studentId);
   }
 
+  eliminarEstudiante(studentId: string) {
+    const nombre = this.studentName(studentId);
+    if (!confirm(`¿Eliminar por completo la cuenta de ${nombre}? Esto borra su acceso a TODOS los cursos, no solo esta unidad, y no se puede deshacer.`)) return;
+    this.enrollmentsSvc.deleteStudent(studentId).subscribe(() => {
+      if (this.selectedStudentId() === studentId) this.selectedStudentId.set(null);
+      this.reloadEnrollments();
+      this.enrollmentsSvc.listStudents().subscribe((s) => this.allStudents.set(s));
+    });
+  }
+
   enrolarEstudiante() {
     if (this.enrollForm.invalid) return;
     const courseId = this.unit()?.courseId;
