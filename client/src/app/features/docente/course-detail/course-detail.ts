@@ -3,35 +3,28 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CoursesService } from '../../../core/services/courses.service';
-import { SessionsService } from '../../../core/services/sessions.service';
 import { QuestionsService } from '../../../core/services/questions.service';
+import { SessionsService } from '../../../core/services/sessions.service';
 import { EnrollmentsService } from '../../../core/services/enrollments.service';
 import { EntregasService } from '../../../core/services/entregas.service';
-import { RubricService } from '../../../core/services/rubric.service';
-import { ExportService } from '../../../core/services/export.service';
-import { RubricChart } from '../../../shared/components/rubric-chart/rubric-chart';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
-import { AcademicSession, Entrega, Enrollment, Question, RubricaResultado, StudentInfo, Unit } from '../../../core/models/models';
-
-type Tab = 'sesiones' | 'estudiantes' | 'exportar';
+import { AcademicSession, Course, Entrega, Enrollment, Question, Topic } from '../../../core/models/models';
 
 @Component({
-  selector: 'app-unit-detail',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, RubricChart, DatePipe, Icon, EmptyState],
-  templateUrl: './unit-detail.html',
-  styleUrl: './unit-detail.css',
+  selector: 'app-course-detail',
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, Icon, EmptyState, DatePipe],
+  templateUrl: './course-detail.html',
+  styleUrl: './course-detail.css',
 })
-export class UnitDetail implements OnInit {
+export class CourseDetail implements OnInit {
   private route = inject(ActivatedRoute);
   private coursesSvc = inject(CoursesService);
-  private sessionsSvc = inject(SessionsService);
   private questionsSvc = inject(QuestionsService);
+  private sessionsSvc = inject(SessionsService);
   private enrollmentsSvc = inject(EnrollmentsService);
   private entregasSvc = inject(EntregasService);
-  private rubricSvc = inject(RubricService);
-  private exportSvc = inject(ExportService);
   private fb = inject(FormBuilder);
 
   etiquetaTipoSesionFijo = etiquetaTipoSesionFijo;
@@ -39,19 +32,19 @@ export class UnitDetail implements OnInit {
   esSesionDeEvidencia = esSesionDeEvidencia;
   etiquetaNivel = etiquetaNivel;
 
-  tab = signal<Tab>('sesiones');
-  unit = signal<Unit | null>(null);
-  sessions = signal<AcademicSession[]>([]); // Examen de Unidad + Proyecto de Investigación de Unidad
+  course = signal<Course | null>(null);
+  allTopics = signal<Topic[]>([]);
+  sessions = signal<AcademicSession[]>([]);
   enrollments = signal<Enrollment[]>([]);
-  allStudents = signal<StudentInfo[]>([]);
 
   editingSessionId = signal<string | null>(null);
   topicFilter = signal<string>('');
   availableQuestions = signal<Question[]>([]);
   selectedQuestionIds = signal<Set<string>>(new Set());
-
-  selectedStudentId = signal<string | null>(null);
-  selectedStudentRubrica = signal<RubricaResultado | null>(null);
+  sessionEditForm = this.fb.group({
+    dueDate: [''],
+    timeLimitMinutes: [null as number | null],
+  });
 
   entregasSessionId = signal<string | null>(null);
   entregas = signal<Entrega[]>([]);
@@ -61,52 +54,29 @@ export class UnitDetail implements OnInit {
     feedback: [''],
   });
 
-  sessionEditForm = this.fb.group({
-    dueDate: [''],
-    timeLimitMinutes: [null as number | null],
-    pesoAciertos: [40],
-    pesoEvidencia: [60],
-  });
-
-  enrollForm = this.fb.group({ studentId: ['', Validators.required] });
-  newStudentForm = this.fb.group({
-    name: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-  });
-  showNewStudentForm = signal(false);
-
-  private unitId!: string;
+  private courseId!: string;
 
   ngOnInit() {
-    this.unitId = this.route.snapshot.paramMap.get('unitId')!;
-    this.coursesSvc.getUnit(this.unitId).subscribe((unit) => {
-      this.unit.set(unit);
-      this.reloadEnrollments();
+    this.courseId = this.route.snapshot.paramMap.get('courseId')!;
+    this.coursesSvc.list().subscribe((courses) => {
+      const course = courses.find((c) => c.id === this.courseId) ?? null;
+      this.course.set(course);
+      const topics = (course?.units ?? []).flatMap((u) => u.topics ?? []);
+      this.allTopics.set(topics);
     });
     this.reloadSessions();
-    this.enrollmentsSvc.listStudents().subscribe((s) => this.allStudents.set(s));
+    this.enrollmentsSvc.listByCourse(this.courseId).subscribe((e) => this.enrollments.set(e));
   }
 
   reloadSessions() {
-    this.sessionsSvc.list({ unitId: this.unitId, soloDirectas: true }).subscribe((s) => this.sessions.set(s));
+    this.sessionsSvc.list({ courseId: this.courseId }).subscribe((s) => this.sessions.set(s));
   }
-
-  reloadEnrollments() {
-    const courseId = this.unit()?.courseId;
-    if (!courseId) return;
-    this.enrollmentsSvc.listByCourse(courseId).subscribe((e) => this.enrollments.set(e));
-  }
-
-  // --- Sesiones fijas de la unidad ---
 
   startEditSession(s: AcademicSession) {
     this.editingSessionId.set(s.id);
     this.sessionEditForm.reset({
       dueDate: s.dueDate ? s.dueDate.slice(0, 16) : '',
       timeLimitMinutes: s.timeLimitMinutes ?? null,
-      pesoAciertos: s.pesoAciertos,
-      pesoEvidencia: s.pesoEvidencia,
     });
     this.selectedQuestionIds.set(new Set(s.questionIds));
     this.topicFilter.set('');
@@ -137,8 +107,6 @@ export class UnitDetail implements OnInit {
         dueDate: value.dueDate || null,
         timeLimitMinutes: esEvidencia ? null : value.timeLimitMinutes,
         questionIds: esEvidencia ? undefined : Array.from(this.selectedQuestionIds()),
-        pesoAciertos: value.pesoAciertos!,
-        pesoEvidencia: value.pesoEvidencia!,
       })
       .subscribe(() => {
         this.editingSessionId.set(null);
@@ -149,8 +117,6 @@ export class UnitDetail implements OnInit {
   toggleApertura(s: AcademicSession) {
     this.sessionsSvc.toggleApertura(s.id, !s.abiertoParaTodos).subscribe(() => this.reloadSessions());
   }
-
-  // --- Entregas (proyecto de unidad) ---
 
   verEntregas(s: AcademicSession) {
     this.entregasSessionId.set(s.id);
@@ -178,55 +144,7 @@ export class UnitDetail implements OnInit {
     });
   }
 
-  // --- Estudiantes y rúbrica ---
-
-  verRubrica(studentId: string) {
-    this.selectedStudentId.set(studentId);
-    this.selectedStudentRubrica.set(null);
-    this.rubricSvc.getUnidad(this.unitId, studentId).subscribe((r) => this.selectedStudentRubrica.set(r));
-  }
-
-  exportarProgresoEstudiante(studentId: string) {
-    this.exportSvc.exportUnitProgresoPdf(this.unitId, studentId);
-  }
-
-  enrolarEstudiante() {
-    if (this.enrollForm.invalid) return;
-    const courseId = this.unit()?.courseId;
-    if (!courseId) return;
-    this.enrollmentsSvc.enroll(this.enrollForm.value.studentId!, courseId).subscribe(() => {
-      this.enrollForm.reset();
-      this.reloadEnrollments();
-    });
-  }
-
-  crearYEnrolarEstudiante() {
-    if (this.newStudentForm.invalid) return;
-    const { name, email, password } = this.newStudentForm.getRawValue();
-    const courseId = this.unit()?.courseId;
-    if (!courseId) return;
-    this.enrollmentsSvc.createStudent(name!, email!, password!).subscribe((student) => {
-      this.enrollmentsSvc.enroll(student.id, courseId).subscribe(() => {
-        this.newStudentForm.reset();
-        this.showNewStudentForm.set(false);
-        this.enrollmentsSvc.listStudents().subscribe((s) => this.allStudents.set(s));
-        this.reloadEnrollments();
-      });
-    });
-  }
-
-  // --- Export ---
-
-  exportarUnidadCsv() {
-    this.exportSvc.exportUnitCsv(this.unitId);
-  }
-
-  exportarCursoCsv() {
-    const courseId = this.unit()?.courseId;
-    if (courseId) this.exportSvc.exportCourseCsv(courseId);
-  }
-
   studentName(id: string): string {
-    return this.allStudents().find((s) => s.id === id)?.name ?? id;
+    return this.enrollments().find((e) => e.studentId === id)?.student?.name ?? id;
   }
 }

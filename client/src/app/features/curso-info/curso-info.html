@@ -1,7 +1,31 @@
 <a [routerLink]="volver()" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver</a>
-<h1 class="section-title"><app-icon name="info" [size]="22" /> Información del Curso</h1>
+<div class="section-header">
+  <h1 class="section-title"><app-icon name="info" [size]="22" /> Información del Curso</h1>
+  @if (auth.isEstudiante()) {
+    <button class="secondary small" (click)="exportarMiProgreso()"><app-icon name="download" [size]="13" /> Descargar mi progreso del curso</button>
+  }
+</div>
 
 @if (info(); as i) {
+  <section class="card">
+    <h2 class="section-title"><app-icon name="chart" [size]="18" /> Ponderación de la nota final del curso</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Categoría</th>
+          <th>Peso</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of i.categoriasCurso; track c.nombre) {
+          <tr>
+            <td>{{ c.nombre }}</td>
+            <td>{{ c.peso }}%</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
   <section class="card">
     <div class="section-header">
       <h2 class="section-title"><app-icon name="file-text" [size]="18" /> Cómo serás evaluado</h2>

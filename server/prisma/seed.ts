@@ -2,22 +2,26 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { CURRICULUM } from './curriculum';
 import { CARPETAS_FIJAS } from '../src/lib/enums';
+import { crearSesionesFijasCurso, crearSesionesFijasUnidad, crearSesionesFijasTema } from '../src/lib/sesionesFijas';
 
 const prisma = new PrismaClient();
 
-// Fase 2: cursos, unidades, temas y su contenido base (las 4 carpetas fijas
-// por tema). Las categorías de evaluación, el banco de preguntas y las
-// sesiones se siembran en la Fase 3.
+// Cursos, unidades, temas y su contenido base: las 4 carpetas fijas por
+// tema, y las sesiones fijas de la rúbrica (ver TIPOS_SESION_FIJOS) en los
+// 3 niveles (tema, unidad, curso). El banco de preguntas y el contenido de
+// las carpetas los llena el docente desde la plataforma.
 async function seedCurriculo() {
   for (const [courseIdx, curso] of CURRICULUM.entries()) {
     const course = await prisma.course.create({
       data: { name: curso.name, orderIndex: courseIdx },
     });
+    await crearSesionesFijasCurso(course.id);
 
     for (const [unitIdx, unidad] of curso.units.entries()) {
       const unit = await prisma.unit.create({
         data: { courseId: course.id, name: unidad.name, orderIndex: unitIdx },
       });
+      await crearSesionesFijasUnidad(unit.id);
 
       for (const [topicIdx, topicName] of unidad.topics.entries()) {
         const topic = await prisma.topic.create({
@@ -31,6 +35,7 @@ async function seedCurriculo() {
             orderIndex: idx,
           })),
         });
+        await crearSesionesFijasTema(topic.id, unit.id);
       }
     }
   }

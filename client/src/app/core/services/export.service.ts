@@ -27,4 +27,14 @@ export class ExportService {
   exportTopicPdf(topicId: string, topicName: string) {
     return this.download(`/api/export/topics/${topicId}/pdf`, `${topicName}.pdf`);
   }
+
+  exportUnitProgresoPdf(unitId: string, studentId?: string) {
+    const suffix = studentId ? `?studentId=${studentId}` : '';
+    return this.download(`/api/export/units/${unitId}/progreso.pdf${suffix}`, `progreso-unidad-${unitId}.pdf`);
+  }
+
+  exportCourseProgresoPdf(courseId: string, studentId?: string) {
+    const suffix = studentId ? `?studentId=${studentId}` : '';
+    return this.download(`/api/export/courses/${courseId}/progreso.pdf${suffix}`, `progreso-curso-${courseId}.pdf`);
+  }
 }

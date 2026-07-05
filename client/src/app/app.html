@@ -9,6 +9,7 @@
         @if (auth.isEstudiante()) {
           <a routerLink="/estudiante" class="link-with-icon"><app-icon name="home" [size]="15" /> Dashboard</a>
           <a routerLink="/estudiante/cursos" class="link-with-icon"><app-icon name="book-open" [size]="15" /> Mis cursos</a>
+          <a routerLink="/estudiante/guia" class="link-with-icon"><app-icon name="info" [size]="15" /> Guía del Alumno</a>
         }
         <a routerLink="/perfil" class="link-with-icon"><app-icon name="user" [size]="15" /> Perfil</a>
       </nav>

@@ -3,52 +3,56 @@ import { prisma } from '../lib/prisma';
 import { asyncHandler } from '../lib/asyncHandler';
 import { validate } from '../lib/validate';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { notFound, badRequest, forbidden } from '../lib/errors';
-import { answerSchema, sessionSchema, toggleAperturaSchema } from './sessions.schemas';
+import { notFound, badRequest } from '../lib/errors';
+import { answerSchema, sessionUpdateSchema, toggleAperturaSchema } from './sessions.schemas';
 import { seededShuffle, shuffledOptionOrder } from './shuffle';
+import { assertEnrolledForSession } from '../lib/sessionScope';
+import { TIPOS_SESION_FIJOS_POR_ID } from '../lib/enums';
 
 export const sessionsRouter = Router();
 
-async function assertEnrolledInUnit(studentId: string, unitId: string) {
-  const unit = await prisma.unit.findUnique({ where: { id: unitId } });
-  if (!unit) throw notFound('Unidad');
-  const enrolled = await prisma.enrollment.findUnique({
-    where: { studentId_courseId: { studentId, courseId: unit.courseId } },
-  });
-  if (!enrolled) throw forbidden('No estás inscrito en el curso de esta unidad.');
+// Si una sesión venció y el alumno nunca la entregó, se marca entregada en
+// el primer acceso posterior a la fecha límite (no depende de que su
+// navegador siga abierto con el temporizador corriendo).
+async function autoSubmitIfExpired(state: { id: string; deadlineAt: Date | null; submittedAt: Date | null }) {
+  if (!state.submittedAt && state.deadlineAt && new Date(state.deadlineAt).getTime() < Date.now()) {
+    await prisma.studentSessionState.update({ where: { id: state.id }, data: { submittedAt: state.deadlineAt } });
+    state.submittedAt = state.deadlineAt;
+  }
 }
-
-sessionsRouter.post(
-  '/',
-  requireAuth,
-  requireRole('docente'),
-  validate(sessionSchema),
-  asyncHandler(async (req, res) => {
-    const { questionIds, ...rest } = req.body;
-    const session = await prisma.academicSession.create({
-      data: { ...rest, questionIds: JSON.stringify(questionIds) },
-      include: { categoria: true },
-    });
-    res.status(201).json({ ...session, questionIds });
-  })
-);
 
 sessionsRouter.get(
   '/',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const unitId = req.query.unitId as string | undefined;
-    if (!unitId) throw badRequest('unitId es requerido.');
+    const { courseId, unitId, topicId, soloDirectas } = req.query as {
+      courseId?: string;
+      unitId?: string;
+      topicId?: string;
+      soloDirectas?: string;
+    };
 
-    if (req.user!.role === 'estudiante') {
-      await assertEnrolledInUnit(req.user!.sub, unitId);
+    let where: Record<string, unknown>;
+    if (topicId) {
+      where = { topicId };
+    } else if (unitId) {
+      // Por defecto trae TODAS las sesiones de la unidad (las 2 propias de
+      // unidad + las de sus temas), para la vista del alumno. soloDirectas=1
+      // limita a solo las 2 sesiones propias de la unidad (usado por la
+      // pantalla del docente para configurar Examen/Proyecto de Unidad).
+      where = soloDirectas === '1' ? { unitId, topicId: null } : { unitId };
+    } else if (courseId) {
+      where = { courseId };
+    } else {
+      throw badRequest('Debes indicar courseId, unitId o topicId.');
     }
 
-    const sessions = await prisma.academicSession.findMany({
-      where: { unitId },
-      include: { categoria: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    if (req.user!.role === 'estudiante') {
+      const sample = await prisma.academicSession.findFirst({ where });
+      if (sample) await assertEnrolledForSession(req.user!.sub, sample);
+    }
+
+    const sessions = await prisma.academicSession.findMany({ where, orderBy: { createdAt: 'asc' } });
 
     if (req.user!.role === 'docente') {
       return res.json(sessions.map((s) => ({ ...s, questionIds: JSON.parse(s.questionIds) })));
@@ -78,13 +82,10 @@ sessionsRouter.get(
   '/:id',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const session = await prisma.academicSession.findUnique({
-      where: { id: req.params.id },
-      include: { categoria: true },
-    });
+    const session = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
     if (!session) throw notFound('Sesión');
     if (req.user!.role === 'estudiante') {
-      await assertEnrolledInUnit(req.user!.sub, session.unitId);
+      await assertEnrolledForSession(req.user!.sub, session);
     }
     res.json({ ...session, questionIds: JSON.parse(session.questionIds) });
   })
@@ -94,7 +95,7 @@ sessionsRouter.put(
   '/:id',
   requireAuth,
   requireRole('docente'),
-  validate(sessionSchema.partial()),
+  validate(sessionUpdateSchema),
   asyncHandler(async (req, res) => {
     const { questionIds, ...rest } = req.body;
     const data: Record<string, unknown> = { ...rest };
@@ -104,47 +105,44 @@ sessionsRouter.put(
   })
 );
 
-// Interruptor global: el docente abre o cierra el examen para todos los inscritos a la vez.
+// Interruptor global: el docente abre o cierra la sesión para todos los
+// inscritos a la vez. Al abrir una Participación Activa por primera vez, se
+// fija automáticamente su fecha límite a 120 horas desde ese momento (la
+// duración fija que tiene esa categoría en toda la plataforma).
 sessionsRouter.patch(
   '/:id/apertura',
   requireAuth,
   requireRole('docente'),
   validate(toggleAperturaSchema),
   asyncHandler(async (req, res) => {
-    const session = await prisma.academicSession.update({
-      where: { id: req.params.id },
-      data: { abiertoParaTodos: req.body.abiertoParaTodos },
-    });
+    const existing = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
+    if (!existing) throw notFound('Sesión');
+
+    const data: Record<string, unknown> = { abiertoParaTodos: req.body.abiertoParaTodos };
+    const tipo = TIPOS_SESION_FIJOS_POR_ID[existing.tipoFijo];
+    if (req.body.abiertoParaTodos && tipo?.duracionHoras && !existing.dueDate) {
+      data.dueDate = new Date(Date.now() + tipo.duracionHoras * 60 * 60 * 1000);
+    }
+
+    const session = await prisma.academicSession.update({ where: { id: req.params.id }, data });
     res.json(session);
   })
 );
 
-sessionsRouter.delete(
-  '/:id',
-  requireAuth,
-  requireRole('docente'),
-  asyncHandler(async (req, res) => {
-    await prisma.academicSession.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  })
-);
-
-// --- Flujo de resolución del estudiante ---
+// --- Flujo de resolución del estudiante (solo aplica a sesiones con preguntas) ---
 
 sessionsRouter.post(
   '/:id/start',
   requireAuth,
   requireRole('estudiante'),
   asyncHandler(async (req, res) => {
-    const session = await prisma.academicSession.findUnique({
-      where: { id: req.params.id },
-      include: { categoria: true },
-    });
+    const session = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
     if (!session) throw notFound('Sesión');
-    await assertEnrolledInUnit(req.user!.sub, session.unitId);
+    await assertEnrolledForSession(req.user!.sub, session);
 
-    if (session.categoria.tipoEvaluacion === 'examen' && !session.abiertoParaTodos) {
-      throw badRequest('El examen aún no ha sido habilitado por tu docente.');
+    const tipo = TIPOS_SESION_FIJOS_POR_ID[session.tipoFijo];
+    if (tipo?.modo === 'examen' && !session.abiertoParaTodos) {
+      throw badRequest('Esta evaluación aún no ha sido habilitada por tu docente.');
     }
 
     const existing = await prisma.studentSessionState.findUnique({
@@ -156,7 +154,7 @@ sessionsRouter.post(
     const order = seededShuffle(questionIds, `${session.id}:${req.user!.sub}:questions`);
     const deadlineAt = session.timeLimitMinutes
       ? new Date(Date.now() + session.timeLimitMinutes * 60 * 1000)
-      : null;
+      : session.dueDate;
 
     const state = await prisma.studentSessionState.create({
       data: {
@@ -177,12 +175,13 @@ sessionsRouter.get(
   asyncHandler(async (req, res) => {
     const session = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
     if (!session) throw notFound('Sesión');
-    await assertEnrolledInUnit(req.user!.sub, session.unitId);
+    await assertEnrolledForSession(req.user!.sub, session);
 
     const state = await prisma.studentSessionState.findUnique({
       where: { sessionId_studentId: { sessionId: session.id, studentId: req.user!.sub } },
     });
     if (!state) throw badRequest('Debes iniciar la sesión antes de ver las preguntas.');
+    await autoSubmitIfExpired(state);
 
     const orderedIds: string[] = JSON.parse(state.questionOrder);
     const questions = await prisma.question.findMany({
@@ -243,18 +242,14 @@ sessionsRouter.patch(
   asyncHandler(async (req, res) => {
     const session = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
     if (!session) throw notFound('Sesión');
-    await assertEnrolledInUnit(req.user!.sub, session.unitId);
+    await assertEnrolledForSession(req.user!.sub, session);
 
-    let state = await prisma.studentSessionState.findUnique({
+    const state = await prisma.studentSessionState.findUnique({
       where: { sessionId_studentId: { sessionId: session.id, studentId: req.user!.sub } },
     });
     if (!state) throw badRequest('Debes iniciar la sesión antes de responder.');
+    await autoSubmitIfExpired(state);
     if (state.submittedAt) throw badRequest('Esta sesión ya fue entregada.');
-
-    if (state.deadlineAt && new Date(state.deadlineAt).getTime() < Date.now()) {
-      await prisma.studentSessionState.update({ where: { id: state.id }, data: { submittedAt: new Date() } });
-      throw badRequest('El tiempo para esta sesión ya venció. Tus respuestas guardadas fueron entregadas.');
-    }
 
     const { questionId, selectedOptionIds } = req.body as { questionId: string; selectedOptionIds: string[] };
     const question = await prisma.question.findUnique({ where: { id: questionId }, include: { opciones: true } });
@@ -329,12 +324,13 @@ sessionsRouter.get(
       if (!q) throw badRequest('studentId es requerido para el docente.');
       studentId = q;
     } else {
-      await assertEnrolledInUnit(req.user!.sub, session.unitId);
+      await assertEnrolledForSession(req.user!.sub, session);
     }
 
     const state = await prisma.studentSessionState.findUnique({
       where: { sessionId_studentId: { sessionId: session.id, studentId } },
     });
+    if (state) await autoSubmitIfExpired(state);
     const attempts = await prisma.attempt.findMany({
       where: { sessionId: session.id, studentId },
       include: { question: { include: { opciones: true } } },

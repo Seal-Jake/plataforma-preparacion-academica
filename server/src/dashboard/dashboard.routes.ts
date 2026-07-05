@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { asyncHandler } from '../lib/asyncHandler';
 import { requireAuth, requireRole } from '../middleware/auth';
+import { TIPOS_SESION_FIJOS_POR_ID } from '../lib/enums';
 
 export const dashboardRouter = Router();
 
@@ -14,15 +15,19 @@ dashboardRouter.get(
 
     const enrollments = await prisma.enrollment.findMany({ where: { studentId }, include: { course: true } });
     const courseIds = enrollments.map((e) => e.courseId);
+    const courseById = new Map(enrollments.map((e) => [e.courseId, e.course]));
 
     const units = await prisma.unit.findMany({ where: { courseId: { in: courseIds } } });
     const unitIds = units.map((u) => u.id);
     const unitById = new Map(units.map((u) => [u.id, u]));
-    const courseById = new Map(enrollments.map((e) => [e.courseId, e.course]));
 
+    // Cubre los 3 niveles: sesiones de curso (courseId), y de unidad/tema
+    // (ambas tienen unitId, las de tema además topicId).
     const sessions = await prisma.academicSession.findMany({
-      where: { unitId: { in: unitIds }, dueDate: { not: null } },
-      include: { categoria: true },
+      where: {
+        dueDate: { not: null },
+        OR: [{ courseId: { in: courseIds } }, { unitId: { in: unitIds } }],
+      },
     });
 
     const states = await prisma.studentSessionState.findMany({
@@ -33,14 +38,14 @@ dashboardRouter.get(
     const pendientes = sessions
       .filter((s) => !stateBySession.get(s.id)?.submittedAt)
       .map((s) => {
-        const unit = unitById.get(s.unitId)!;
-        const course = courseById.get(unit.courseId);
+        const unit = s.unitId ? unitById.get(s.unitId) : undefined;
+        const course = unit ? courseById.get(unit.courseId) : s.courseId ? courseById.get(s.courseId) : undefined;
         return {
           sessionId: s.id,
           title: s.title,
-          categoriaNombre: s.categoria.nombre,
-          unitId: unit.id,
-          unitName: unit.name,
+          categoriaNombre: TIPOS_SESION_FIJOS_POR_ID[s.tipoFijo]?.nombre ?? s.title,
+          unitId: unit?.id ?? null,
+          unitName: unit?.name ?? null,
           courseName: course?.name ?? '',
           dueDate: s.dueDate,
           vencido: s.dueDate ? new Date(s.dueDate).getTime() < Date.now() : false,

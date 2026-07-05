@@ -7,7 +7,14 @@ export type TipoPregunta =
   | 'problema_lectura'
   | 'interpretacion_grafica'
   | 'proposicion_vf';
-export type TipoEvaluacion = 'examen' | 'participacion_clase' | 'participacion_activa' | 'entrega' | 'generica';
+export type TipoSesionFijo =
+  | 'participacion_clase'
+  | 'practica'
+  | 'participacion_activa'
+  | 'examen_unidad'
+  | 'proyecto_unidad'
+  | 'examen_final_curso'
+  | 'proyecto_final_curso';
 export type ThemePreference = 'dark' | 'light';
 
 export interface UserInfo {
@@ -91,27 +98,12 @@ export interface Question {
   createdAt: string;
 }
 
-export interface EvaluationCategory {
-  id: string;
-  unitId: string;
-  nombre: string;
-  peso: number;
-  tipoEvaluacion: TipoEvaluacion;
-  promediarPorTema: boolean;
-}
-
-export interface EvaluationCategoriesResponse {
-  categorias: EvaluationCategory[];
-  pesoTotal: number;
-  pesoValido: boolean;
-}
-
 export interface AcademicSession {
   id: string;
-  unitId: string;
+  courseId?: string | null;
+  unitId?: string | null;
   topicId?: string | null;
-  categoriaId: string;
-  categoria?: EvaluationCategory;
+  tipoFijo: TipoSesionFijo;
   title: string;
   questionIds: string[];
   dueDate?: string | null;
@@ -210,8 +202,8 @@ export interface DashboardPendiente {
   sessionId: string;
   title: string;
   categoriaNombre: string;
-  unitId: string;
-  unitName: string;
+  unitId: string | null;
+  unitName: string | null;
   courseName: string;
   dueDate: string | null;
   vencido: boolean;
@@ -225,5 +217,6 @@ export interface DashboardResponse {
 
 export interface CourseInfoResponse {
   infoEvaluacion: string | null;
+  categoriasCurso: { nombre: string; peso: number }[];
   unidades: { unitId: string; unitName: string; categorias: { nombre: string; peso: number }[] }[];
 }

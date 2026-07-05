@@ -3,7 +3,10 @@
   <h1>{{ u.name }}</h1>
 
   <section class="card">
-    <h2 class="section-title"><app-icon name="chart" [size]="18" /> Mi rúbrica</h2>
+    <div class="section-header">
+      <h2 class="section-title"><app-icon name="chart" [size]="18" /> Mi rúbrica</h2>
+      <button class="secondary small" (click)="exportarProgreso()"><app-icon name="download" [size]="13" /> Descargar mi progreso</button>
+    </div>
     @if (rubrica(); as r) {
       <app-rubric-chart [rubrica]="r" />
     } @else {

@@ -1,4 +1,4 @@
-import { Nivel, Seccion, TipoEvaluacion, TipoPregunta } from '../models/models';
+import { Nivel, Seccion, TipoPregunta, TipoSesionFijo } from '../models/models';
 
 // Traduce los valores internos (usados en la base de datos y la API) a
 // texto natural en español para mostrar en la interfaz. Los <select> siguen
@@ -25,20 +25,28 @@ const TIPO_PREGUNTA_LABELS: Record<TipoPregunta, string> = {
   proposicion_vf: 'Verdadero / Falso',
 };
 
-const TIPO_EVALUACION_LABELS: Record<TipoEvaluacion, string> = {
-  examen: 'Examen',
+// La rúbrica es fija en toda la plataforma (ver TIPOS_SESION_FIJOS en el
+// backend, server/src/lib/enums.ts): estas 7 sesiones existen siempre,
+// automáticamente, en cada tema/unidad/curso. El docente ya no crea
+// categorías, solo las configura (preguntas, fecha límite, evidencia).
+const TIPO_SESION_FIJO_LABELS: Record<TipoSesionFijo, string> = {
   participacion_clase: 'Participación en Clase',
+  practica: 'Práctica',
   participacion_activa: 'Participación Activa',
-  entrega: 'Entrega / Proyecto',
-  generica: 'Genérica',
+  examen_unidad: 'Examen de Unidad',
+  proyecto_unidad: 'Proyecto de Investigación de Unidad',
+  examen_final_curso: 'Examen Final del Curso',
+  proyecto_final_curso: 'Proyecto de Investigación Final',
 };
 
-const TIPO_EVALUACION_AYUDA: Record<TipoEvaluacion, string> = {
-  examen: 'Preguntas con corrección automática. Puede tener temporizador, activación manual y pedir evidencia además de las respuestas.',
-  participacion_clase: 'Preguntas rápidas que el docente elige directamente del banco de un tema.',
-  participacion_activa: 'El alumno sube una foto o archivo como evidencia de una actividad en clase.',
-  entrega: 'El alumno entrega texto y/o un archivo (ensayo, proyecto, tarea); el docente lo califica manualmente.',
-  generica: 'Cualquier otro tipo de evaluación con preguntas o entrega, sin comportamiento especial.',
+const TIPO_SESION_FIJO_AYUDA: Record<TipoSesionFijo, string> = {
+  participacion_clase: 'Preguntas rápidas del banco de este tema (objetivo: 10 preguntas).',
+  practica: 'Ejercicios de práctica de este tema (objetivo: 5 preguntas).',
+  participacion_activa: 'El alumno sube evidencia de una actividad en clase. Al activarla, la fecha límite se fija automáticamente 120 horas después.',
+  examen_unidad: 'Examen con preguntas de cualquier tema de esta unidad (objetivo: 20 preguntas). Actívalo cuando quieras que los alumnos puedan rendirlo.',
+  proyecto_unidad: 'El alumno entrega un proyecto de investigación de la unidad; tú lo calificas manualmente.',
+  examen_final_curso: 'Examen final con preguntas de cualquier tema del curso (objetivo: 20 preguntas).',
+  proyecto_final_curso: 'El alumno entrega el proyecto de investigación final del curso; tú lo calificas manualmente.',
 };
 
 export function etiquetaNivel(v: string): string {
@@ -53,12 +61,16 @@ export function etiquetaTipoPregunta(v: string): string {
   return TIPO_PREGUNTA_LABELS[v as TipoPregunta] ?? v;
 }
 
-export function etiquetaTipoEvaluacion(v: string): string {
-  return TIPO_EVALUACION_LABELS[v as TipoEvaluacion] ?? v;
+export function etiquetaTipoSesionFijo(v: string): string {
+  return TIPO_SESION_FIJO_LABELS[v as TipoSesionFijo] ?? v;
 }
 
-export function ayudaTipoEvaluacion(v: string): string {
-  return TIPO_EVALUACION_AYUDA[v as TipoEvaluacion] ?? '';
+export function ayudaTipoSesionFijo(v: string): string {
+  return TIPO_SESION_FIJO_AYUDA[v as TipoSesionFijo] ?? '';
+}
+
+export function esSesionDeEvidencia(v: string): boolean {
+  return v === 'participacion_activa' || v === 'proyecto_unidad' || v === 'proyecto_final_curso';
 }
 
 const ESTADO_SESION_LABELS: Record<string, string> = {
@@ -74,4 +86,3 @@ export function etiquetaEstadoSesion(v: string): string {
 export const NIVELES_OPCIONES = Object.entries(NIVEL_LABELS) as [Nivel, string][];
 export const SECCIONES_OPCIONES = Object.entries(SECCION_LABELS) as [Seccion, string][];
 export const TIPOS_PREGUNTA_OPCIONES = Object.entries(TIPO_PREGUNTA_LABELS) as [TipoPregunta, string][];
-export const TIPOS_EVALUACION_OPCIONES = Object.entries(TIPO_EVALUACION_LABELS) as [TipoEvaluacion, string][];

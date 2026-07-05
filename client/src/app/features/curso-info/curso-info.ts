@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CoursesService } from '../../core/services/courses.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ExportService } from '../../core/services/export.service';
 import { CourseInfoResponse } from '../../core/models/models';
 import { Icon } from '../../shared/components/icon/icon';
 import { EmptyState } from '../../shared/components/empty-state/empty-state';
@@ -16,6 +17,7 @@ import { EmptyState } from '../../shared/components/empty-state/empty-state';
 export class CursoInfo implements OnInit {
   private route = inject(ActivatedRoute);
   private coursesSvc = inject(CoursesService);
+  private exportSvc = inject(ExportService);
   protected auth = inject(AuthService);
 
   info = signal<CourseInfoResponse | null>(null);
@@ -50,5 +52,9 @@ export class CursoInfo implements OnInit {
 
   volver(): string {
     return this.auth.isDocente() ? '/docente' : '/estudiante/cursos';
+  }
+
+  exportarMiProgreso() {
+    this.exportSvc.exportCourseProgresoPdf(this.courseId);
   }
 }

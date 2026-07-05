@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 export const DOCENTE_ROUTES: Routes = [
   { path: '', loadComponent: () => import('./tree/tree').then((m) => m.Tree) },
+  { path: 'courses/:courseId', loadComponent: () => import('./course-detail/course-detail').then((m) => m.CourseDetail) },
   { path: 'units/:unitId', loadComponent: () => import('./unit-detail/unit-detail').then((m) => m.UnitDetail) },
   {
     path: 'topics/:topicId',

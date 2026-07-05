@@ -6,6 +6,7 @@ import { validate } from '../lib/validate';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, forbidden } from '../lib/errors';
 import { LIMITE_TEXTO_CORTO } from '../lib/textLimits';
+import { crearSesionesFijasUnidad } from '../lib/sesionesFijas';
 
 export const unitsRouter = Router();
 
@@ -48,6 +49,7 @@ unitsRouter.post(
   validate(unitSchema),
   asyncHandler(async (req, res) => {
     const unit = await prisma.unit.create({ data: req.body });
+    await crearSesionesFijasUnidad(unit.id);
     res.status(201).json(unit);
   })
 );

@@ -1,0 +1,152 @@
+@if (course(); as c) {
+  <a routerLink="/docente" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver al árbol</a>
+  <h1 class="section-title"><app-icon name="exam" [size]="22" /> Sesiones del curso: {{ c.name }}</h1>
+  <p class="muted">
+    Todo curso tiene siempre estas dos sesiones fijas: el Examen Final del Curso y el Proyecto de Investigación
+    Final. Aquí las configuras (preguntas de cualquier tema del curso, fecha límite) y las activas cuando
+    corresponda.
+  </p>
+
+  <section class="card">
+    @if (sessions().length > 0) {
+      <table>
+        <thead>
+          <tr>
+            <th>Sesión</th>
+            <th>Preguntas / Evidencia</th>
+            <th>Fecha límite</th>
+            <th>Abierto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of sessions(); track s.id) {
+            <tr>
+              <td>
+                {{ etiquetaTipoSesionFijo(s.tipoFijo) }}
+                <p class="field-hint"><app-icon name="info" [size]="12" /> {{ ayudaTipoSesionFijo(s.tipoFijo) }}</p>
+              </td>
+              <td>{{ esSesionDeEvidencia(s.tipoFijo) ? 'Entrega manual' : (s.questionIds.length + ' preguntas') }}</td>
+              <td>{{ s.dueDate ? (s.dueDate | date: 'short') : '—' }}</td>
+              <td>
+                <button class="secondary small" (click)="toggleApertura(s)">
+                  <app-icon [name]="s.abiertoParaTodos ? 'lock' : 'check-circle'" [size]="13" />
+                  {{ s.abiertoParaTodos ? 'Cerrar' : 'Abrir' }}
+                </button>
+              </td>
+              <td class="actions">
+                <button class="secondary small" (click)="startEditSession(s)"><app-icon name="edit" [size]="13" /> Configurar</button>
+                @if (esSesionDeEvidencia(s.tipoFijo)) {
+                  <button class="secondary small" (click)="verEntregas(s)"><app-icon name="file-text" [size]="13" /> Ver entregas</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <app-empty-state icon="exam" title="Cargando sesiones..." description="Las sesiones fijas de este curso se están cargando." />
+    }
+
+    @if (editingSessionId(); as sid) {
+      @for (s of sessions(); track s.id) {
+        @if (s.id === sid) {
+          <form class="card session-form" [formGroup]="sessionEditForm" (ngSubmit)="saveSessionEdit(s)">
+            <h3>Configurar: {{ etiquetaTipoSesionFijo(s.tipoFijo) }}</h3>
+
+            <div class="grid-2">
+              <div class="form-field">
+                <label>Fecha límite (opcional)</label>
+                <input type="datetime-local" formControlName="dueDate" />
+              </div>
+              @if (!esSesionDeEvidencia(s.tipoFijo)) {
+                <div class="form-field">
+                  <label>Tiempo límite (minutos, opcional)</label>
+                  <input type="number" formControlName="timeLimitMinutes" min="1" />
+                </div>
+              }
+            </div>
+
+            @if (!esSesionDeEvidencia(s.tipoFijo)) {
+              <div class="fieldset-section">
+                <p class="fieldset-title"><app-icon name="book-open" [size]="14" /> Preguntas (de cualquier tema del curso)</p>
+                <div class="form-field">
+                  <label>Tema del banco de preguntas</label>
+                  <select [ngModel]="topicFilter()" (ngModelChange)="onTopicFilterChange($event)" [ngModelOptions]="{standalone: true}">
+                    <option value="">Selecciona un tema para ver sus preguntas...</option>
+                    @for (t of allTopics(); track t.id) {
+                      <option [value]="t.id">{{ t.name }}</option>
+                    }
+                  </select>
+                </div>
+
+                @if (availableQuestions().length) {
+                  <div class="question-picker">
+                    @for (q of availableQuestions(); track q.id) {
+                      <label class="pick-item">
+                        <input type="checkbox" [checked]="selectedQuestionIds().has(q.id)" (change)="toggleQuestion(q.id)" />
+                        <span>{{ q.enunciado }}</span>
+                        <span class="badge">{{ etiquetaNivel(q.nivel) }}</span>
+                      </label>
+                    }
+                  </div>
+                } @else if (topicFilter()) {
+                  <p class="muted">Este tema no tiene preguntas todavía.</p>
+                }
+                <p class="muted">{{ selectedQuestionIds().size }} pregunta(s) seleccionada(s)</p>
+              </div>
+            }
+
+            <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
+            <button type="button" class="secondary" (click)="editingSessionId.set(null)">Cancelar</button>
+          </form>
+        }
+      }
+    }
+
+    @if (entregasSessionId(); as sid) {
+      <div class="entregas-panel">
+        <h3 class="section-title"><app-icon name="file-text" [size]="16" /> Entregas</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Estudiante</th>
+              <th>Entregado</th>
+              <th>Nota</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of enrollments(); track e.id) {
+              <tr>
+                <td>{{ e.student?.name }}</td>
+                <td>{{ entregaDe(e.studentId)?.entregadoAt ? 'Sí' : 'No' }}</td>
+                <td>{{ entregaDe(e.studentId)?.nota ?? '—' }}</td>
+                <td><button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (gradingStudentId(); as sid2) {
+          <form class="card session-form" [formGroup]="gradeForm" (ngSubmit)="guardarCalificacion(sid2)">
+            <h3>Calificar entrega de {{ studentName(sid2) }}</h3>
+            <p class="muted contenido-preview">{{ entregaDe(sid2)?.contenidoTexto || 'Sin texto (revisa si adjuntó un archivo).' }}</p>
+            <div class="form-field">
+              <label>Nota (0-20)</label>
+              <input type="number" formControlName="nota" min="0" max="20" step="0.5" />
+            </div>
+            <div class="form-field">
+              <label>Feedback</label>
+              <textarea formControlName="feedback" rows="3"></textarea>
+            </div>
+            <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar calificación</button>
+            <button type="button" class="secondary" (click)="gradingStudentId.set(null)">Cancelar</button>
+          </form>
+        }
+      </div>
+    }
+  </section>
+} @else {
+  <p class="muted">Cargando curso...</p>
+}

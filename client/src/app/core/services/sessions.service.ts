@@ -6,31 +6,36 @@ import { AcademicSession, SessionQuestionsResponse, SessionResult } from '../mod
 export class SessionsService {
   constructor(private http: HttpClient) {}
 
-  listByUnit(unitId: string) {
-    return this.http.get<AcademicSession[]>('/api/sessions', { params: { unitId } });
+  // Las sesiones son fijas (ya no se crean libremente): exactamente una de
+  // las tres opciones debe indicarse, según el nivel de la sesión buscada.
+  // Por defecto, unitId trae también las sesiones de los temas de esa
+  // unidad; pasa soloDirectas:true para traer solo las 2 propias de unidad.
+  list(params: { courseId?: string; unitId?: string; topicId?: string; soloDirectas?: boolean }) {
+    const httpParams: Record<string, string> = {};
+    if (params.courseId) httpParams['courseId'] = params.courseId;
+    if (params.unitId) httpParams['unitId'] = params.unitId;
+    if (params.topicId) httpParams['topicId'] = params.topicId;
+    if (params.soloDirectas) httpParams['soloDirectas'] = '1';
+    return this.http.get<AcademicSession[]>('/api/sessions', { params: httpParams });
   }
 
   get(id: string) {
     return this.http.get<AcademicSession>(`/api/sessions/${id}`);
   }
 
-  create(data: {
-    unitId: string;
-    topicId?: string | null;
-    categoriaId: string;
-    title: string;
-    questionIds: string[];
-    dueDate?: string | null;
-    timeLimitMinutes?: number | null;
-    requiereEvidencia?: boolean;
-    pesoAciertos?: number;
-    pesoEvidencia?: number;
-  }) {
-    return this.http.post<AcademicSession>('/api/sessions', data);
-  }
-
-  delete(id: string) {
-    return this.http.delete<void>(`/api/sessions/${id}`);
+  update(
+    id: string,
+    data: Partial<{
+      title: string;
+      questionIds: string[];
+      dueDate: string | null;
+      timeLimitMinutes: number | null;
+      requiereEvidencia: boolean;
+      pesoAciertos: number;
+      pesoEvidencia: number;
+    }>
+  ) {
+    return this.http.put<AcademicSession>(`/api/sessions/${id}`, data);
   }
 
   toggleApertura(id: string, abiertoParaTodos: boolean) {

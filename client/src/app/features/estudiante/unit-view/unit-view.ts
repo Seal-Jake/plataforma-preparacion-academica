@@ -38,8 +38,8 @@ export class UnitView implements OnInit {
   ngOnInit() {
     this.unitId = this.route.snapshot.paramMap.get('unitId')!;
     this.coursesSvc.getUnit(this.unitId).subscribe((u) => this.unit.set(u));
-    this.sessionsSvc.listByUnit(this.unitId).subscribe((s) => this.sessions.set(s));
-    this.rubricSvc.get(this.unitId).subscribe((r) => this.rubrica.set(r));
+    this.sessionsSvc.list({ unitId: this.unitId }).subscribe((s) => this.sessions.set(s));
+    this.rubricSvc.getUnidad(this.unitId).subscribe((r) => this.rubrica.set(r));
   }
 
   abrirSesion(s: AcademicSession) {
@@ -56,5 +56,9 @@ export class UnitView implements OnInit {
 
   exportarTopicoPdf(topicId: string, topicName: string) {
     this.exportSvc.exportTopicPdf(topicId, topicName);
+  }
+
+  exportarProgreso() {
+    this.exportSvc.exportUnitProgresoPdf(this.unitId);
   }
 }

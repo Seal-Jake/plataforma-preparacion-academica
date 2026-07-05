@@ -16,7 +16,7 @@ datasource db {
 // Seccion: 'matematica' | 'economia_aplicada'
 // Nivel: 'basico' | 'estandar' | 'deco' | 'admision' | 'retos'
 // TipoPregunta: 'operaciones' | 'enunciado' | 'problema_lectura' | 'interpretacion_grafica' | 'proposicion_vf'
-// TipoEvaluacion: 'examen' | 'participacion_clase' | 'participacion_activa' | 'entrega' | 'generica'
+// AcademicSession.tipoFijo: 'participacion_clase' | 'practica' | 'participacion_activa' | 'examen_unidad' | 'proyecto_unidad' | 'examen_final_curso' | 'proyecto_final_curso'
 // TipoFijoCarpeta: 'concepto_teoria' | 'mecanica_ejemplos' | 'actividad_practica' | 'aplicacion_economia'
 // ThemePreference: 'dark' | 'light'
 
@@ -48,6 +48,7 @@ model Course {
 
   units       Unit[]
   enrollments Enrollment[]
+  sessions    AcademicSession[]
 }
 
 model Unit {
@@ -56,10 +57,9 @@ model Unit {
   name       String
   orderIndex Int
 
-  course               Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  topics               Topic[]
-  sessions             AcademicSession[]
-  evaluationCategories EvaluationCategory[]
+  course   Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topics   Topic[]
+  sessions AcademicSession[]
 
   @@index([courseId])
 }
@@ -159,29 +159,21 @@ model Enrollment {
   @@unique([studentId, courseId])
 }
 
-// Reemplaza el "tipo" fijo de sesión de la v1: el docente crea las
-// categorías que necesite por unidad, con el nombre y peso que quiera.
-model EvaluationCategory {
-  id               String  @id @default(cuid())
-  unitId           String
-  nombre           String
-  peso             Float
-  tipoEvaluacion   String
-  promediarPorTema Boolean @default(false)
-
-  unit     Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  sessions AcademicSession[]
-
-  @@index([unitId])
-}
-
+// Rúbrica fija de la plataforma (ver TIPOS_SESION_FIJOS en lib/enums.ts):
+// cada tema recibe automáticamente sus 3 sesiones fijas (Participación en
+// Clase, Práctica, Participación Activa), cada unidad las suyas (Examen y
+// Proyecto de Unidad), y cada curso las suyas (Examen Final y Proyecto
+// Final). tipoFijo identifica cuál es, y exactamente uno de
+// courseId/unitId/topicId corresponde al nivel de esa sesión (topicId
+// también implica su unitId para poder consultar por unidad directamente).
 model AcademicSession {
   id                String    @id @default(cuid())
-  unitId            String
+  courseId          String?
+  unitId            String?
   topicId           String?
-  categoriaId       String
+  tipoFijo          String
   title             String
-  questionIds       String // JSON array of question ids, canonical order ("[]" si es solo de tipo entrega)
+  questionIds       String // JSON array of question ids, canonical order ("[]" si es de tipo evidencia)
   dueDate           DateTime?
   timeLimitMinutes  Int?
   abiertoParaTodos  Boolean   @default(false)
@@ -190,16 +182,17 @@ model AcademicSession {
   pesoEvidencia     Float     @default(60)
   createdAt         DateTime  @default(now())
 
-  unit          Unit                  @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  topic         Topic?                @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  categoria     EvaluationCategory    @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  course        Course?               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  unit          Unit?                 @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  topic         Topic?                @relation(fields: [topicId], references: [id], onDelete: Cascade)
   attempts      Attempt[]
   studentStates StudentSessionState[]
   entregas      Entrega[]
 
+  @@index([courseId])
   @@index([unitId])
   @@index([topicId])
-  @@index([categoriaId])
+  @@index([tipoFijo])
 }
 
 model StudentSessionState {

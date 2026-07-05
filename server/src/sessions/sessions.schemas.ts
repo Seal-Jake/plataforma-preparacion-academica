@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import { LIMITE_TEXTO_CORTO } from '../lib/textLimits';
 
-export const sessionSchema = z.object({
-  unitId: z.string().min(1),
-  topicId: z.string().min(1).optional().nullable(),
-  categoriaId: z.string().min(1),
-  title: z.string().trim().min(1).max(LIMITE_TEXTO_CORTO),
-  questionIds: z.array(z.string().min(1)).default([]),
+// Las sesiones ya no se crean libremente: cada tema/unidad/curso recibe
+// automáticamente sus sesiones fijas (ver TIPOS_SESION_FIJOS). El docente
+// solo las configura: qué preguntas lleva, fecha límite, tiempo, evidencia.
+export const sessionUpdateSchema = z.object({
+  title: z.string().trim().min(1).max(LIMITE_TEXTO_CORTO).optional(),
+  questionIds: z.array(z.string().min(1)).optional(),
   dueDate: z.coerce.date().optional().nullable(),
   timeLimitMinutes: z.number().int().min(1).max(600).optional().nullable(),
-  requiereEvidencia: z.boolean().default(false),
-  pesoAciertos: z.number().min(0).max(100).default(40),
-  pesoEvidencia: z.number().min(0).max(100).default(60),
+  requiereEvidencia: z.boolean().optional(),
+  pesoAciertos: z.number().min(0).max(100).optional(),
+  pesoEvidencia: z.number().min(0).max(100).optional(),
 });
 
 export const answerSchema = z.object({

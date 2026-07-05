@@ -3,9 +3,10 @@ import { prisma } from '../lib/prisma';
 import { asyncHandler } from '../lib/asyncHandler';
 import { validate } from '../lib/validate';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { notFound, forbidden, badRequest } from '../lib/errors';
+import { notFound, badRequest } from '../lib/errors';
 import { uploadDocument } from '../lib/upload';
 import { calificarEntregaSchema, submitEntregaSchema } from './entregas.schemas';
+import { assertEnrolledForSession } from '../lib/sessionScope';
 
 export const entregasRouter = Router();
 
@@ -22,14 +23,9 @@ const entregaSelect = {
 } as const;
 
 async function getSessionOrThrow(sessionId: string) {
-  const session = await prisma.academicSession.findUnique({ where: { id: sessionId }, include: { unit: true } });
+  const session = await prisma.academicSession.findUnique({ where: { id: sessionId } });
   if (!session) throw notFound('Sesión');
   return session;
-}
-
-async function assertEnrolled(studentId: string, courseId: string) {
-  const enrolled = await prisma.enrollment.findUnique({ where: { studentId_courseId: { studentId, courseId } } });
-  if (!enrolled) throw forbidden('No estás inscrito en el curso de esta sesión.');
 }
 
 entregasRouter.get(
@@ -38,7 +34,7 @@ entregasRouter.get(
   requireRole('estudiante'),
   asyncHandler(async (req, res) => {
     const session = await getSessionOrThrow(req.params.sessionId);
-    await assertEnrolled(req.user!.sub, session.unit.courseId);
+    await assertEnrolledForSession(req.user!.sub, session);
 
     const entrega = await prisma.entrega.findUnique({
       where: { sessionId_studentId: { sessionId: session.id, studentId: req.user!.sub } },
@@ -56,7 +52,7 @@ entregasRouter.put(
   validate(submitEntregaSchema),
   asyncHandler(async (req, res) => {
     const session = await getSessionOrThrow(req.params.sessionId);
-    await assertEnrolled(req.user!.sub, session.unit.courseId);
+    await assertEnrolledForSession(req.user!.sub, session);
 
     const { contenidoTexto } = req.body as { contenidoTexto?: string };
     const file = req.file;
@@ -90,7 +86,7 @@ entregasRouter.get(
     const session = await getSessionOrThrow(req.params.sessionId);
     const studentId = req.user!.role === 'docente' ? (req.query.studentId as string) : req.user!.sub;
     if (!studentId) throw badRequest('studentId es requerido.');
-    if (req.user!.role === 'estudiante') await assertEnrolled(req.user!.sub, session.unit.courseId);
+    if (req.user!.role === 'estudiante') await assertEnrolledForSession(req.user!.sub, session);
 
     const entrega = await prisma.entrega.findUnique({
       where: { sessionId_studentId: { sessionId: session.id, studentId } },

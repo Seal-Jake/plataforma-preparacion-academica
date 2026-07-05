@@ -7,6 +7,7 @@ import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, forbidden } from '../lib/errors';
 import { LIMITE_TEXTO_CORTO } from '../lib/textLimits';
 import { CARPETAS_FIJAS, MIN_QUESTIONS_PER_TOPIC } from '../lib/enums';
+import { crearSesionesFijasTema } from '../lib/sesionesFijas';
 
 export const topicsRouter = Router();
 
@@ -68,6 +69,7 @@ topicsRouter.post(
         orderIndex: idx,
       })),
     });
+    await crearSesionesFijasTema(topic.id, topic.unitId);
     res.status(201).json(topic);
   })
 );

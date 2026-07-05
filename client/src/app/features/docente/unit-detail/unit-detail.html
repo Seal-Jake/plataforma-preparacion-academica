@@ -3,11 +3,8 @@
   <h1>{{ u.name }}</h1>
 
   <div class="tabs">
-    <button [class.active]="tab() === 'categorias'" (click)="tab.set('categorias')">
-      <app-icon name="chart" [size]="15" /> Categorías de Evaluación
-    </button>
     <button [class.active]="tab() === 'sesiones'" (click)="tab.set('sesiones')">
-      <app-icon name="exam" [size]="15" /> Sesiones
+      <app-icon name="exam" [size]="15" /> Sesiones de la Unidad
     </button>
     <button [class.active]="tab() === 'estudiantes'" (click)="tab.set('estudiantes')">
       <app-icon name="users" [size]="15" /> Estudiantes y Rúbrica
@@ -17,112 +14,21 @@
     </button>
   </div>
 
-  @if (tab() === 'categorias') {
-    <section class="card">
-      <div class="section-header">
-        <h2 class="section-title"><app-icon name="chart" [size]="18" /> Categorías de evaluación de esta unidad</h2>
-        <button (click)="startNewCategory()"><app-icon name="plus" [size]="14" /> Nueva categoría</button>
-      </div>
-      <p class="muted">
-        Aquí defines cómo se reparte el 100% de la nota de esta unidad: crea una categoría por cada cosa que
-        calificarás (por ejemplo "Participación en Clase" o "Examen Parcial") y asígnale un peso.
-        <span class="badge" [class.success]="pesoValido()" [class.warning]="!pesoValido()">
-          Suma actual: {{ pesoTotal() }}%
-        </span>
-      </p>
-
-      @if (categorias().length > 0) {
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Peso</th>
-              <th>Tipo</th>
-              <th>Promedia por tema</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (c of categorias(); track c.id) {
-              <tr>
-                <td>{{ c.nombre }}</td>
-                <td>{{ c.peso }}%</td>
-                <td>{{ etiquetaTipoEvaluacion(c.tipoEvaluacion) }}</td>
-                <td>{{ c.promediarPorTema ? 'Sí' : 'No' }}</td>
-                <td class="actions">
-                  <button class="secondary small" (click)="startEditCategory(c)"><app-icon name="edit" [size]="13" /> Editar</button>
-                  <button class="danger small" (click)="deleteCategory(c)"><app-icon name="trash" [size]="13" /> Eliminar</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      } @else {
-        <app-empty-state
-          icon="chart"
-          title="Todavía no hay categorías de evaluación"
-          description="Crea la primera para poder empezar a armar sesiones (exámenes, participaciones, proyectos...) en esta unidad."
-          actionLabel="Crear la primera categoría"
-          (action)="startNewCategory()"
-        />
-      }
-
-      @if (showCategoryForm()) {
-        <form class="card session-form" [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
-          <h3>{{ editingCategory() ? 'Editar categoría' : 'Nueva categoría' }}</h3>
-          <div class="grid-2">
-            <div class="form-field">
-              <label>Nombre</label>
-              <input formControlName="nombre" placeholder="Ej: Participación en Clase" />
-            </div>
-            <div class="form-field">
-              <label>Peso (%)</label>
-              <input type="number" formControlName="peso" min="0" max="100" />
-            </div>
-            <div class="form-field">
-              <label>Tipo de evaluación</label>
-              <select formControlName="tipoEvaluacion">
-                @for (t of tiposEvaluacionOpciones; track t[0]) {
-                  <option [value]="t[0]">{{ t[1] }}</option>
-                }
-              </select>
-              <p class="field-hint"><app-icon name="info" [size]="13" /> {{ ayudaTipoEvaluacion(categoryForm.value.tipoEvaluacion || 'generica') }}</p>
-            </div>
-            <div class="form-field">
-              <label>
-                <input type="checkbox" formControlName="promediarPorTema" />
-                Promediar por tema
-              </label>
-              <p class="field-hint">
-                <app-icon name="info" [size]="13" /> Si esta categoría tiene sesiones repartidas entre varios temas, primero
-                promedia las de cada tema y luego promedia esos resultados entre sí (útil para "Prácticas Calificadas").
-              </p>
-            </div>
-          </div>
-          <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar categoría</button>
-          <button type="button" class="secondary" (click)="showCategoryForm.set(false)">Cancelar</button>
-        </form>
-      }
-    </section>
-  }
-
   @if (tab() === 'sesiones') {
     <section class="card">
-      <div class="section-header">
-        <h2 class="section-title"><app-icon name="exam" [size]="18" /> Sesiones de la unidad</h2>
-        <button [disabled]="categorias().length === 0" (click)="startNewSession()">
-          <app-icon name="plus" [size]="14" /> Nueva sesión
-        </button>
-      </div>
+      <h2 class="section-title"><app-icon name="exam" [size]="18" /> Sesiones de la unidad</h2>
+      <p class="muted">
+        Cada unidad tiene siempre estas dos sesiones fijas: el Examen de Unidad y el Proyecto de Investigación de
+        Unidad. Aquí las configuras (preguntas, fecha límite) y las activas cuando quieras que los alumnos puedan
+        rendirlas o entregar.
+      </p>
 
       @if (sessions().length > 0) {
         <table>
           <thead>
             <tr>
-              <th>Título</th>
-              <th>Categoría</th>
-              <th>Preguntas</th>
-              <th>Evidencia</th>
+              <th>Sesión</th>
+              <th>Preguntas / Evidencia</th>
               <th>Fecha límite</th>
               <th>Abierto</th>
               <th></th>
@@ -131,10 +37,11 @@
           <tbody>
             @for (s of sessions(); track s.id) {
               <tr>
-                <td>{{ s.title }}</td>
-                <td>{{ categoryName(s.categoriaId) }}</td>
-                <td>{{ s.questionIds.length }}</td>
-                <td>{{ s.requiereEvidencia ? (s.pesoAciertos + '% / ' + s.pesoEvidencia + '%') : '—' }}</td>
+                <td>
+                  {{ etiquetaTipoSesionFijo(s.tipoFijo) }}
+                  <p class="field-hint"><app-icon name="info" [size]="12" /> {{ ayudaTipoSesionFijo(s.tipoFijo) }}</p>
+                </td>
+                <td>{{ esSesionDeEvidencia(s.tipoFijo) ? 'Entrega manual' : (s.questionIds.length + ' preguntas') }}</td>
                 <td>{{ s.dueDate ? (s.dueDate | date: 'short') : '—' }}</td>
                 <td>
                   <button class="secondary small" (click)="toggleApertura(s)">
@@ -143,123 +50,77 @@
                   </button>
                 </td>
                 <td class="actions">
-                  @if (esEntregable(s)) {
+                  <button class="secondary small" (click)="startEditSession(s)"><app-icon name="edit" [size]="13" /> Configurar</button>
+                  @if (esSesionDeEvidencia(s.tipoFijo)) {
                     <button class="secondary small" (click)="verEntregas(s)"><app-icon name="file-text" [size]="13" /> Ver entregas</button>
                   }
-                  <button class="danger small" (click)="deleteSession(s)"><app-icon name="trash" [size]="13" /> Eliminar</button>
                 </td>
               </tr>
             }
           </tbody>
         </table>
-      } @else if (categorias().length === 0) {
-        <app-empty-state
-          icon="exam"
-          title="Primero necesitas una categoría de evaluación"
-          description="Ve a la pestaña 'Categorías de Evaluación' y crea al menos una antes de poder armar una sesión."
-        />
       } @else {
-        <app-empty-state
-          icon="exam"
-          title="Todavía no hay sesiones en esta unidad"
-          description="Una sesión puede ser un examen, una participación, o una entrega de texto/archivo."
-          actionLabel="Crear la primera sesión"
-          (action)="startNewSession()"
-        />
+        <app-empty-state icon="exam" title="Cargando sesiones..." description="Las sesiones fijas de esta unidad se están cargando." />
       }
 
-      @if (showSessionForm()) {
-        <form class="card session-form" [formGroup]="sessionForm" (ngSubmit)="saveSession()">
-          <h3>Nueva sesión</h3>
+      @if (editingSessionId(); as sid) {
+        @for (s of sessions(); track s.id) {
+          @if (s.id === sid) {
+            <form class="card session-form" [formGroup]="sessionEditForm" (ngSubmit)="saveSessionEdit(s)">
+              <h3>Configurar: {{ etiquetaTipoSesionFijo(s.tipoFijo) }}</h3>
 
-          <div class="fieldset-section">
-            <p class="fieldset-title"><app-icon name="file-text" [size]="14" /> Datos básicos</p>
-            <div class="grid-2">
-              <div class="form-field">
-                <label>Categoría</label>
-                <select formControlName="categoriaId">
-                  @for (c of categorias(); track c.id) {
-                    <option [value]="c.id">{{ c.nombre }} ({{ c.peso }}%)</option>
+              <div class="fieldset-section">
+                <p class="fieldset-title"><app-icon name="file-text" [size]="14" /> Datos básicos</p>
+                <div class="grid-2">
+                  <div class="form-field">
+                    <label>Fecha límite (opcional)</label>
+                    <input type="datetime-local" formControlName="dueDate" />
+                    <p class="field-hint"><app-icon name="info" [size]="13" /> Solo es un aviso visual de "vencido"; no bloquea que el alumno responda.</p>
+                  </div>
+                  @if (!esSesionDeEvidencia(s.tipoFijo)) {
+                    <div class="form-field">
+                      <label>Tiempo límite (minutos, opcional)</label>
+                      <input type="number" formControlName="timeLimitMinutes" min="1" />
+                    </div>
                   }
-                </select>
-              </div>
-              <div class="form-field">
-                <label>Título</label>
-                <input formControlName="title" placeholder="Ej: Práctica 1 - Ecuaciones" />
-              </div>
-              <div class="form-field">
-                <label>Fecha límite (opcional)</label>
-                <input type="datetime-local" formControlName="dueDate" />
-                <p class="field-hint"><app-icon name="info" [size]="13" /> Solo es un aviso visual de "vencido"; no bloquea que el alumno responda.</p>
-              </div>
-              @if (categoriaSeleccionada()?.tipoEvaluacion === 'examen') {
-                <div class="form-field">
-                  <label>Tiempo límite (minutos, opcional)</label>
-                  <input type="number" formControlName="timeLimitMinutes" min="1" />
                 </div>
-              }
-            </div>
-          </div>
+              </div>
 
-          @if (categoriaSeleccionada()?.tipoEvaluacion === 'examen') {
-            <div class="fieldset-section">
-              <p class="fieldset-title"><app-icon name="upload" [size]="14" /> Evidencia (opcional, solo exámenes)</p>
-              <label class="checkbox-row">
-                <input type="checkbox" formControlName="requiereEvidencia" />
-                Además de responder, el alumno debe subir un archivo con su resolución
-              </label>
-              @if (sessionForm.value.requiereEvidencia) {
-                <div class="grid-2" style="margin-top: 0.6rem;">
+              @if (!esSesionDeEvidencia(s.tipoFijo)) {
+                <div class="fieldset-section">
+                  <p class="fieldset-title"><app-icon name="book-open" [size]="14" /> Preguntas ({{ etiquetaTipoSesionFijo(s.tipoFijo) }})</p>
                   <div class="form-field">
-                    <label>% Aciertos automáticos</label>
-                    <input type="number" formControlName="pesoAciertos" min="0" max="100" />
+                    <label>Tema del banco de preguntas</label>
+                    <select [ngModel]="topicFilter()" (ngModelChange)="onTopicFilterChange($event)" [ngModelOptions]="{standalone: true}">
+                      <option value="">Selecciona un tema para ver sus preguntas...</option>
+                      @for (t of u.topics; track t.id) {
+                        <option [value]="t.id">{{ t.name }}</option>
+                      }
+                    </select>
                   </div>
-                  <div class="form-field">
-                    <label>% Evidencia (calificación manual)</label>
-                    <input type="number" formControlName="pesoEvidencia" min="0" max="100" />
-                  </div>
+
+                  @if (availableQuestions().length) {
+                    <div class="question-picker">
+                      @for (q of availableQuestions(); track q.id) {
+                        <label class="pick-item">
+                          <input type="checkbox" [checked]="selectedQuestionIds().has(q.id)" (change)="toggleQuestion(q.id)" />
+                          <span>{{ q.enunciado }}</span>
+                          <span class="badge">{{ etiquetaNivel(q.nivel) }}</span>
+                        </label>
+                      }
+                    </div>
+                  } @else if (topicFilter()) {
+                    <p class="muted">Este tema no tiene preguntas todavía.</p>
+                  }
+                  <p class="muted">{{ selectedQuestionIds().size }} pregunta(s) seleccionada(s)</p>
                 </div>
               }
-            </div>
+
+              <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
+              <button type="button" class="secondary" (click)="editingSessionId.set(null)">Cancelar</button>
+            </form>
           }
-
-          <div class="fieldset-section">
-            <p class="fieldset-title"><app-icon name="book-open" [size]="14" /> Preguntas (opcional)</p>
-            <div class="form-field">
-              <label>Tema del banco de preguntas</label>
-              <select [ngModel]="sessionTopicFilter()" (ngModelChange)="onTopicFilterChange($event)" [ngModelOptions]="{standalone: true}">
-                <option value="">Sin preguntas (sesión de solo entrega)</option>
-                @for (t of u.topics; track t.id) {
-                  <option [value]="t.id">{{ t.name }}</option>
-                }
-              </select>
-            </div>
-
-            @if (availableQuestions().length) {
-              <div class="question-picker">
-                @for (q of availableQuestions(); track q.id) {
-                  <label class="pick-item">
-                    <input
-                      type="checkbox"
-                      [checked]="selectedQuestionIds().has(q.id)"
-                      (change)="toggleQuestion(q.id)"
-                    />
-                    <span>{{ q.enunciado }}</span>
-                    <span class="badge">{{ etiquetaNivel(q.nivel) }}</span>
-                  </label>
-                }
-              </div>
-              <p class="muted">{{ selectedQuestionIds().size }} pregunta(s) seleccionada(s)</p>
-            } @else if (sessionTopicFilter()) {
-              <p class="muted">Este tema no tiene preguntas todavía.</p>
-            } @else {
-              <p class="field-hint"><app-icon name="info" [size]="13" /> Sin preguntas seleccionadas, esta sesión será de solo entrega (el alumno sube texto y/o un archivo).</p>
-            }
-          </div>
-
-          <button type="submit"><app-icon name="check-circle" [size]="14" /> Crear sesión</button>
-          <button type="button" class="secondary" (click)="showSessionForm.set(false)">Cancelar</button>
-        </form>
+        }
       }
 
       @if (entregasSessionId(); as sid) {
@@ -278,7 +139,7 @@
               @for (e of enrollments(); track e.id) {
                 <tr>
                   <td>{{ e.student?.name }}</td>
-                  <td>{{ entregaDe(e.studentId)?.entregadoAt || entregaDe(e.studentId)?.archivoMimeType ? 'Sí' : 'No' }}</td>
+                  <td>{{ entregaDe(e.studentId)?.entregadoAt ? 'Sí' : 'No' }}</td>
                   <td>{{ entregaDe(e.studentId)?.nota ?? '—' }}</td>
                   <td><button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button></td>
                 </tr>
@@ -347,7 +208,10 @@
               <tr>
                 <td>{{ e.student?.name }}</td>
                 <td>{{ e.student?.email }}</td>
-                <td><button class="secondary small" (click)="verRubrica(e.studentId)"><app-icon name="chart" [size]="13" /> Ver rúbrica</button></td>
+                <td class="actions">
+                  <button class="secondary small" (click)="verRubrica(e.studentId)"><app-icon name="chart" [size]="13" /> Ver rúbrica</button>
+                  <button class="secondary small" (click)="exportarProgresoEstudiante(e.studentId)"><app-icon name="download" [size]="13" /> Descargar progreso</button>
+                </td>
               </tr>
             }
           </tbody>
