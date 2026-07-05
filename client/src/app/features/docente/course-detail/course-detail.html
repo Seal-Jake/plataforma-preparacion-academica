@@ -71,7 +71,7 @@
               <div class="fieldset-section">
                 <p class="fieldset-title"><app-icon name="book-open" [size]="14" /> Preguntas (de cualquier tema del curso)</p>
                 <div class="form-field">
-                  <label>Tema del banco de preguntas</label>
+                  <label>Elige un tema para ver y seleccionar sus preguntas</label>
                   <select [ngModel]="topicFilter()" (ngModelChange)="onTopicFilterChange($event)" [ngModelOptions]="{standalone: true}">
                     <option value="">Selecciona un tema para ver sus preguntas...</option>
                     @for (t of allTopics(); track t.id) {

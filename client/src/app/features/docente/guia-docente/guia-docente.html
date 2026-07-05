@@ -1,0 +1,96 @@
+<h1 class="section-title"><app-icon name="info" [size]="22" /> Guía del Docente</h1>
+<p class="muted">El orden recomendado para configurar un curso desde cero, sin subir todavía material ni evaluaciones.</p>
+
+<section class="card">
+  <h2 class="section-title"><app-icon name="book-open" [size]="18" /> Cómo está organizado todo</h2>
+  <p>
+    La estructura es siempre <strong>Curso → Unidad → Tema</strong>. Cada vez que creas una unidad o un tema, la
+    plataforma crea automáticamente sus sesiones de evaluación fijas (examen, proyecto, participación, práctica) —
+    tú nunca las creas a mano, solo las <strong>configuras</strong> (preguntas, fecha límite) y las
+    <strong>activas</strong> cuando quieras que tus alumnos las vean.
+  </p>
+  <p class="field-hint">
+    <app-icon name="info" [size]="13" /> Puedes ver el detalle exacto de los porcentajes de la rúbrica en la página
+    "Información del curso" de cualquier curso.
+  </p>
+</section>
+
+<section class="card">
+  <h2 class="section-title"><app-icon name="check-circle" [size]="18" /> Flujo recomendado, paso a paso</h2>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">1. Crea tu estructura de contenido</p>
+    <ul class="guia-list">
+      <li>Desde <strong>Docente → Mis cursos</strong>, crea el curso (si aún no existe), luego sus unidades con "Añadir unidad".</li>
+      <li>Dentro de cada unidad, añade sus temas con "Añadir tema".</li>
+      <li>No necesitas crear ninguna sesión de examen o participación: aparecen solas en cuanto creas la unidad o el tema.</li>
+    </ul>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">2. Sube el material de estudio de cada tema</p>
+    <ul class="guia-list">
+      <li>Haz clic en un tema para entrar a su explorador de archivos, con 4 carpetas fijas: Concepto y Marco Teórico, Mecánica y Ejemplos, Actividad Práctica, y Aplicación a la Economía y Administración.</li>
+      <li>Sube ahí tus PDFs, notas de texto o archivos; tus alumnos los verán en cuanto los subas (no hace falta "publicar" nada aparte).</li>
+    </ul>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">3. Crea las preguntas de cada tema</p>
+    <ul class="guia-list">
+      <li>En la misma vista del tema, encontrarás los módulos de <strong>Participación en Clase</strong> y <strong>Práctica</strong> donde escribes las preguntas directamente (alternativas + cuál o cuáles son correctas).</li>
+      <li>Estas preguntas también quedan disponibles para elegirlas al armar el Examen de Unidad o el Examen Final del Curso.</li>
+    </ul>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">4. Activa las evaluaciones de tema cuando estén listas</p>
+    <ul class="guia-list">
+      <li>Participación en Clase y Práctica: se abren y cierran igual que cualquier sesión, desde el tema.</li>
+      <li>Participación Activa: al activarla, se les da automáticamente <strong>120 horas</strong> a tus alumnos para subir su evidencia.</li>
+    </ul>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">5. Configura el Examen y Proyecto de cada unidad</p>
+    <ul class="guia-list">
+      <li>Entra a "Gestionar unidad" → pestaña "Sesiones de la Unidad".</li>
+      <li>En "Configurar" del Examen de Unidad, elige un tema en el desplegable para ver sus preguntas y selecciona las que quieras incluir (puedes mezclar preguntas de varios temas).</li>
+      <li>El Proyecto de Unidad no lleva preguntas: solo fecha límite; tus alumnos entregarán texto o archivo y tú calificas manualmente desde "Ver entregas".</li>
+      <li>Cuando todo esté listo, presiona "Abrir" para activar la sesión para todos tus alumnos inscritos.</li>
+    </ul>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">6. Inscribe a tus estudiantes</p>
+    <ul class="guia-list">
+      <li>En "Gestionar unidad" → pestaña "Estudiantes y Rúbrica", inscribe estudiantes existentes o crea una cuenta nueva e inscríbela de una vez.</li>
+      <li>Ahí mismo puedes ver la rúbrica calculada de cada alumno, descargar su progreso en PDF, o eliminar su cuenta si corresponde.</li>
+    </ul>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">7. Configura el Examen Final y Proyecto Final del curso</p>
+    <ul class="guia-list">
+      <li>Desde "Sesiones del curso" (junto al nombre del curso), repite el mismo proceso: elige preguntas de cualquier tema del curso, define fecha límite, y activa cuando corresponda.</li>
+    </ul>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title">8. Escribe cómo evalúas y revisa el avance</p>
+    <ul class="guia-list">
+      <li>En "Información del curso", escribe un texto libre explicando tu criterio de evaluación a tus alumnos (opcional, pero recomendado).</li>
+      <li>Usa la pestaña "Exportar" de cualquier unidad para descargar un respaldo CSV con las notas de toda la unidad o de todo el curso.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="section-title"><app-icon name="clock" [size]="18" /> Cosas importantes de recordar</h2>
+  <ul class="guia-list">
+    <li>No hace falta configurar todo de una vez: puedes subir contenido de un tema, dejar las evaluaciones para después, y volver cuando quieras — nada se activa hasta que tú lo abras.</li>
+    <li>Una sesión cerrada simplemente no aparece como disponible para el alumno; no se pierde nada por dejarla configurada pero cerrada.</li>
+    <li>La fecha límite es solo un aviso visual de "vencido"; no bloquea que el alumno responda salvo que también hayas puesto un tiempo límite en minutos.</li>
+    <li>Si una categoría de la rúbrica todavía no tiene datos (por ejemplo, un examen que aún no activaste), la plataforma no la cuenta como cero: la nota del alumno se calcula solo con lo que ya existe.</li>
+  </ul>
+</section>

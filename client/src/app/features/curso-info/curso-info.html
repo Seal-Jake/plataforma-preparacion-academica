@@ -59,26 +59,22 @@
     @for (u of i.unidades; track u.unitId) {
       <div class="unidad-block">
         <h3>{{ u.unitName }}</h3>
-        @if (u.categorias.length) {
-          <table>
-            <thead>
+        <table>
+          <thead>
+            <tr>
+              <th>Categoría</th>
+              <th>Peso</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of u.categorias; track c.nombre) {
               <tr>
-                <th>Categoría</th>
-                <th>Peso</th>
+                <td>{{ c.nombre }}</td>
+                <td>{{ c.peso }}%</td>
               </tr>
-            </thead>
-            <tbody>
-              @for (c of u.categorias; track c.nombre) {
-                <tr>
-                  <td>{{ c.nombre }}</td>
-                  <td>{{ c.peso }}%</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        } @else {
-          <p class="muted">Aún no hay categorías de evaluación configuradas para esta unidad.</p>
-        }
+            }
+          </tbody>
+        </table>
       </div>
     }
   </section>
