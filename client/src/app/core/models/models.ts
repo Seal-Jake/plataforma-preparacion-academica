@@ -192,6 +192,18 @@ export interface RubricaResultado {
   porcentajePonderadoConDatos: number;
 }
 
+export interface FilaPlanilla {
+  studentId: string;
+  studentName: string;
+  rubrica: RubricaResultado;
+}
+
+export interface PendientesCalificacion {
+  abiertasPendientes: number;
+  entregasPendientes: number;
+  total: number;
+}
+
 export interface Entrega {
   id?: string;
   sessionId: string;

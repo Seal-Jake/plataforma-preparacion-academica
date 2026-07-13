@@ -2,6 +2,18 @@
   <a routerLink="/docente" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver al árbol</a>
   <h1>{{ u.name }}</h1>
 
+  @if (pendientes(); as p) {
+    @if (p.total > 0) {
+      <div class="pendientes-banner">
+        <app-icon name="alert-triangle" [size]="16" />
+        <span>
+          Tienes <strong>{{ p.total }}</strong> {{ p.total === 1 ? 'tarea pendiente' : 'tareas pendientes' }} de calificar en esta
+          unidad ({{ p.abiertasPendientes }} respuesta(s) abierta(s), {{ p.entregasPendientes }} entrega(s)).
+        </span>
+      </div>
+    }
+  }
+
   <div class="tabs">
     <button [class.active]="tab() === 'sesiones'" (click)="tab.set('sesiones')">
       <app-icon name="exam" [size]="15" /> Sesiones de la Unidad
@@ -129,7 +141,7 @@
               </button>
               @if (showAbiertasPanel()) {
                 <div class="card">
-                  <app-calificar-abiertas [sessionId]="sid" [enrollments]="enrollments()" />
+                  <app-calificar-abiertas [sessionId]="sid" [enrollments]="enrollments()" (cambiado)="onCalificacionCambiada()" />
                 </div>
               }
             }
@@ -167,7 +179,12 @@
                     }
                   </td>
                   <td>{{ entregaDe(e.studentId)?.nota ?? '—' }}</td>
-                  <td><button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button></td>
+                  <td class="actions">
+                    <button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button>
+                    @if (estadoEntrega(e.studentId) !== 'sin_responder') {
+                      <button class="danger small" (click)="reabrirEntrega(e.studentId)"><app-icon name="refresh" [size]="13" /> Reabrir</button>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>
@@ -218,6 +235,66 @@
           <input formControlName="password" placeholder="Contraseña temporal" type="password" />
           <button type="submit"><app-icon name="check-circle" [size]="14" /> Crear e inscribir</button>
         </form>
+      }
+
+      <div class="import-panel">
+        <p class="fieldset-title"><app-icon name="upload" [size]="14" /> Importar alumnos por lista</p>
+        <p class="muted">
+          Pega un correo por línea (o "Nombre - correo"). Solo inscribe cuentas que ya existen; si alguien no
+          aparece, créalo arriba o pídele que se registre en /registro primero.
+        </p>
+        <textarea [(ngModel)]="importText" [ngModelOptions]="{standalone: true}" rows="4" placeholder="juan@correo.com&#10;maria@correo.com"></textarea>
+        <button class="secondary" (click)="importarLista()"><app-icon name="upload" [size]="14" /> Importar lista</button>
+
+        @if (importResultado(); as r) {
+          @if (r.inscritos.length > 0) {
+            <p class="muted"><app-icon name="check-circle" [size]="13" /> Inscritos: {{ r.inscritos.join(', ') }}</p>
+          }
+          @if (r.noEncontrados.length > 0) {
+            <p class="muted"><app-icon name="alert-triangle" [size]="13" /> No encontrados o ya inscritos: {{ r.noEncontrados.join(', ') }}</p>
+          }
+        }
+      </div>
+
+      <button class="secondary" (click)="togglePlanilla()">
+        <app-icon name="chart" [size]="14" /> {{ showPlanilla() ? 'Ocultar planilla de notas' : 'Ver planilla de notas' }}
+      </button>
+
+      @if (showPlanilla()) {
+        <div class="planilla-panel">
+          @if (planilla(); as filas) {
+            @if (filas.length > 0) {
+              <div class="table-scroll">
+                <table class="planilla-table">
+                  <thead>
+                    <tr>
+                      <th>Estudiante</th>
+                      @for (cat of filas[0].rubrica.categorias; track cat.nombre) {
+                        <th>{{ cat.nombre }}</th>
+                      }
+                      <th>Nota final</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (fila of filas; track fila.studentId) {
+                      <tr>
+                        <td>{{ fila.studentName }}</td>
+                        @for (cat of fila.rubrica.categorias; track cat.nombre) {
+                          <td [class.muted]="!cat.tieneDatos">{{ cat.tieneDatos ? cat.nota : '—' }}</td>
+                        }
+                        <td><strong>{{ fila.rubrica.notaFinal ?? '—' }}</strong></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="muted">Ningún estudiante inscrito todavía.</p>
+            }
+          } @else {
+            <p class="muted">Cargando planilla...</p>
+          }
+        </div>
       }
 
       @if (enrollments().length > 0) {

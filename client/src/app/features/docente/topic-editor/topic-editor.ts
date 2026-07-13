@@ -303,6 +303,16 @@ export class TopicEditor implements OnInit {
     });
   }
 
+  reabrirEntrega(studentId: string) {
+    const sessionId = this.entregasSessionId();
+    if (!sessionId) return;
+    const nombre = this.studentName(studentId);
+    if (!confirm(`¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`)) return;
+    this.entregasSvc.reabrir(sessionId, studentId).subscribe(() => {
+      this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
+    });
+  }
+
   studentName(id: string): string {
     return this.enrollments().find((e) => e.studentId === id)?.student?.name ?? id;
   }

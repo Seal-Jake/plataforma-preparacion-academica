@@ -3,6 +3,12 @@
   flex-direction: column;
   gap: 0.75rem;
 }
+.estudiante-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
 .respuesta-abierta-item {
   border: 1px solid var(--border);
   border-radius: var(--radius);

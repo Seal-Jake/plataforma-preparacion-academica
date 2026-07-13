@@ -4,7 +4,14 @@ import { asyncHandler } from '../lib/asyncHandler';
 import { validate } from '../lib/validate';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, badRequest } from '../lib/errors';
-import { answerSchema, answerAbiertaSchema, calificarAttemptSchema, sessionUpdateSchema, toggleAperturaSchema } from './sessions.schemas';
+import {
+  answerSchema,
+  answerAbiertaSchema,
+  calificarAttemptSchema,
+  reabrirSesionSchema,
+  sessionUpdateSchema,
+  toggleAperturaSchema,
+} from './sessions.schemas';
 import { seededShuffle, shuffledOptionOrder } from './shuffle';
 import { assertEnrolledForSession } from '../lib/sessionScope';
 import { TIPOS_SESION_FIJOS_POR_ID } from '../lib/enums';
@@ -443,6 +450,25 @@ sessionsRouter.patch(
       update: { puntaje, correct: puntaje === 1 },
     });
     res.json({ puntaje: updated.puntaje, correct: updated.correct });
+  })
+);
+
+// El docente reabre el intento de un alumno: borra su estado e intentos de
+// esta sesión (empieza de cero) para darle una segunda oportunidad.
+sessionsRouter.post(
+  '/:id/reabrir',
+  requireAuth,
+  requireRole('docente'),
+  validate(reabrirSesionSchema),
+  asyncHandler(async (req, res) => {
+    const { studentId } = req.body as { studentId: string };
+    const session = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
+    if (!session) throw notFound('Sesión');
+
+    await prisma.attempt.deleteMany({ where: { sessionId: session.id, studentId } });
+    await prisma.studentSessionState.deleteMany({ where: { sessionId: session.id, studentId } });
+
+    res.json({ ok: true });
   })
 );
 

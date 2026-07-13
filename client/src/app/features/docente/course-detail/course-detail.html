@@ -148,7 +148,12 @@
                   }
                 </td>
                 <td>{{ entregaDe(e.studentId)?.nota ?? '—' }}</td>
-                <td><button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button></td>
+                <td class="actions">
+                  <button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button>
+                  @if (estadoEntrega(e.studentId) !== 'sin_responder') {
+                    <button class="danger small" (click)="reabrirEntrega(e.studentId)"><app-icon name="refresh" [size]="13" /> Reabrir</button>
+                  }
+                </td>
               </tr>
             }
           </tbody>

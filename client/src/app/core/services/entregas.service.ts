@@ -25,6 +25,10 @@ export class EntregasService {
     return this.http.patch<Entrega>(`/api/entregas/${sessionId}/${studentId}/calificar`, { nota, feedback });
   }
 
+  reabrir(sessionId: string, studentId: string) {
+    return this.http.post<{ ok: boolean }>(`/api/entregas/${sessionId}/${studentId}/reabrir`, {});
+  }
+
   archivoUrl(sessionId: string, studentId?: string) {
     const suffix = studentId ? `?studentId=${studentId}` : '';
     return `/api/entregas/mine/${sessionId}/archivo${suffix}`;

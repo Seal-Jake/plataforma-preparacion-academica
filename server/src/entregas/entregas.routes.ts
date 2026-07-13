@@ -127,3 +127,16 @@ entregasRouter.patch(
     res.json(entrega);
   })
 );
+
+// El docente reabre la entrega de un alumno: la borra por completo para que
+// pueda volver a entregar desde cero.
+entregasRouter.post(
+  '/:sessionId/:studentId/reabrir',
+  requireAuth,
+  requireRole('docente'),
+  asyncHandler(async (req, res) => {
+    const { sessionId, studentId } = req.params;
+    await prisma.entrega.deleteMany({ where: { sessionId, studentId } });
+    res.json({ ok: true });
+  })
+);

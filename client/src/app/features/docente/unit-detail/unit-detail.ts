@@ -2,6 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { CoursesService } from '../../../core/services/courses.service';
 import { SessionsService } from '../../../core/services/sessions.service';
 import { QuestionsService } from '../../../core/services/questions.service';
@@ -14,7 +16,17 @@ import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { CalificarAbiertas } from '../../../shared/components/calificar-abiertas/calificar-abiertas';
 import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaNivel, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
-import { AcademicSession, Entrega, Enrollment, Question, RubricaResultado, StudentInfo, Unit } from '../../../core/models/models';
+import {
+  AcademicSession,
+  Entrega,
+  Enrollment,
+  FilaPlanilla,
+  PendientesCalificacion,
+  Question,
+  RubricaResultado,
+  StudentInfo,
+  Unit,
+} from '../../../core/models/models';
 
 type Tab = 'sesiones' | 'estudiantes' | 'exportar';
 
@@ -57,6 +69,13 @@ export class UnitDetail implements OnInit {
   selectedStudentId = signal<string | null>(null);
   selectedStudentRubrica = signal<RubricaResultado | null>(null);
 
+  showPlanilla = signal(false);
+  planilla = signal<FilaPlanilla[] | null>(null);
+  pendientes = signal<PendientesCalificacion | null>(null);
+
+  importText = '';
+  importResultado = signal<{ inscritos: string[]; noEncontrados: string[] } | null>(null);
+
   entregasSessionId = signal<string | null>(null);
   entregas = signal<Entrega[]>([]);
   gradingStudentId = signal<string | null>(null);
@@ -90,10 +109,24 @@ export class UnitDetail implements OnInit {
     });
     this.reloadSessions();
     this.enrollmentsSvc.listStudents().subscribe((s) => this.allStudents.set(s));
+    this.cargarPendientes();
   }
 
   reloadSessions() {
     this.sessionsSvc.list({ unitId: this.unitId, soloDirectas: true }).subscribe((s) => this.sessions.set(s));
+  }
+
+  cargarPendientes() {
+    this.rubricSvc.getPendientesUnidad(this.unitId).subscribe((p) => this.pendientes.set(p));
+  }
+
+  togglePlanilla() {
+    this.showPlanilla.set(!this.showPlanilla());
+    if (this.showPlanilla() && !this.planilla()) this.cargarPlanilla();
+  }
+
+  cargarPlanilla() {
+    this.rubricSvc.getPlanillaUnidad(this.unitId).subscribe((filas) => this.planilla.set(filas));
   }
 
   reloadEnrollments() {
@@ -195,7 +228,26 @@ export class UnitDetail implements OnInit {
     this.entregasSvc.calificar(sessionId, studentId, nota!, feedback || undefined).subscribe(() => {
       this.gradingStudentId.set(null);
       this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
+      this.onCalificacionCambiada();
     });
+  }
+
+  reabrirEntrega(studentId: string) {
+    const sessionId = this.entregasSessionId();
+    if (!sessionId) return;
+    const nombre = this.studentName(studentId);
+    if (!confirm(`¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`)) return;
+    this.entregasSvc.reabrir(sessionId, studentId).subscribe(() => {
+      this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
+      this.onCalificacionCambiada();
+    });
+  }
+
+  // Mantiene el banner de pendientes y la planilla al día tras cualquier
+  // calificación o reapertura, sin obligar al docente a recargar la página.
+  onCalificacionCambiada() {
+    this.cargarPendientes();
+    if (this.showPlanilla()) this.cargarPlanilla();
   }
 
   // --- Estudiantes y rúbrica ---
@@ -226,6 +278,51 @@ export class UnitDetail implements OnInit {
     if (!courseId) return;
     this.enrollmentsSvc.enroll(this.enrollForm.value.studentId!, courseId).subscribe(() => {
       this.enrollForm.reset();
+      this.reloadEnrollments();
+    });
+  }
+
+  // Inscribe en lote correos pegados (uno por línea, o "Nombre - correo").
+  // Solo empareja contra cuentas de estudiante que ya existen: si un correo
+  // no aparece en ninguna cuenta, se avisa para que el alumno se registre
+  // primero en /registro o el docente lo cree individualmente.
+  importarLista() {
+    const courseId = this.unit()?.courseId;
+    if (!courseId) return;
+    const emailRegex = /[^\s,;<>]+@[^\s,;<>]+\.[^\s,;<>]+/;
+    const lineas = this.importText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lineas.length === 0) return;
+
+    const noEncontrados: string[] = [];
+    const matches: { studentId: string; label: string }[] = [];
+    for (const linea of lineas) {
+      const m = linea.match(emailRegex);
+      const email = (m ? m[0] : linea).toLowerCase();
+      const student = this.allStudents().find((s) => s.email.toLowerCase() === email);
+      if (student) matches.push({ studentId: student.id, label: `${student.name} (${student.email})` });
+      else noEncontrados.push(linea);
+    }
+
+    if (matches.length === 0) {
+      this.importResultado.set({ inscritos: [], noEncontrados });
+      return;
+    }
+
+    forkJoin(
+      matches.map((m) =>
+        this.enrollmentsSvc.enroll(m.studentId, courseId).pipe(
+          map(() => ({ ok: true, label: m.label })),
+          catchError(() => of({ ok: false, label: `${m.label} — ya estaba inscrito` }))
+        )
+      )
+    ).subscribe((resultados) => {
+      const inscritos = resultados.filter((r) => r.ok).map((r) => r.label);
+      const yaInscritos = resultados.filter((r) => !r.ok).map((r) => r.label);
+      this.importResultado.set({ inscritos, noEncontrados: [...yaInscritos, ...noEncontrados] });
+      this.importText = '';
       this.reloadEnrollments();
     });
   }

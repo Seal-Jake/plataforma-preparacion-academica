@@ -59,6 +59,41 @@ async function notaSesionParaEstudiante(session: AcademicSession, studentId: str
   return partes.reduce((acc, p) => acc + (p.peso / pesoTotal) * p.nota, 0);
 }
 
+// Cuenta el trabajo pendiente de calificar del docente en las dos sesiones
+// propias de la unidad (Examen y Proyecto de Unidad): respuestas abiertas ya
+// entregadas por algún alumno pero sin nota, y entregas ya subidas pero sin
+// nota. No cuenta lo que el alumno todavía no entregó (eso es pendiente del
+// alumno, no del docente).
+export async function contarPendientesCalificacionUnidad(
+  unitId: string
+): Promise<{ abiertasPendientes: number; entregasPendientes: number; total: number }> {
+  const sesiones = await prisma.academicSession.findMany({ where: { unitId, topicId: null }, select: { id: true } });
+  const sessionIds = sesiones.map((s) => s.id);
+  if (sessionIds.length === 0) return { abiertasPendientes: 0, entregasPendientes: 0, total: 0 };
+
+  const attemptsSinCalificar = await prisma.attempt.findMany({
+    where: {
+      sessionId: { in: sessionIds },
+      puntaje: null,
+      OR: [{ respuestaTexto: { not: null } }, { archivoData: { not: null } }],
+    },
+    select: { questionId: true },
+  });
+  const questionIds = [...new Set(attemptsSinCalificar.map((a) => a.questionId))];
+  const preguntasAbiertas = await prisma.question.findMany({
+    where: { id: { in: questionIds }, modoRespuesta: 'abierta' },
+    select: { id: true },
+  });
+  const idsAbiertas = new Set(preguntasAbiertas.map((q) => q.id));
+  const abiertasPendientes = attemptsSinCalificar.filter((a) => idsAbiertas.has(a.questionId)).length;
+
+  const entregasPendientes = await prisma.entrega.count({
+    where: { sessionId: { in: sessionIds }, entregadoAt: { not: null }, nota: null },
+  });
+
+  return { abiertasPendientes, entregasPendientes, total: abiertasPendientes + entregasPendientes };
+}
+
 // Promedia la nota de un mismo tipoFijo (practica/participacion_clase/
 // participacion_activa) a través de varios temas, sin tratar como 0 los
 // temas donde el estudiante todavía no tiene ningún dato.

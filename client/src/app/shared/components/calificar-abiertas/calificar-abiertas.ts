@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SessionsService } from '../../../core/services/sessions.service';
 import { Enrollment, SessionResult } from '../../../core/models/models';
@@ -15,6 +15,9 @@ export class CalificarAbiertas implements OnInit {
 
   @Input({ required: true }) sessionId!: string;
   @Input({ required: true }) enrollments!: Enrollment[];
+  // Se emite tras calificar o reabrir, para que el contenedor pueda
+  // refrescar contadores de pendientes que dependen de estos datos.
+  @Output() cambiado = new EventEmitter<void>();
 
   selectedStudentId = signal<string>('');
   result = signal<SessionResult | null>(null);
@@ -66,6 +69,18 @@ export class CalificarAbiertas implements OnInit {
       this.guardadoQuestionId.set(questionId);
       setTimeout(() => this.guardadoQuestionId.set(null), 2000);
       this.selectStudent(studentId);
+      this.cambiado.emit();
+    });
+  }
+
+  reabrirIntento() {
+    const studentId = this.selectedStudentId();
+    if (!studentId) return;
+    const nombre = this.studentName(studentId);
+    if (!confirm(`¿Reabrir el intento de ${nombre}? Se borrarán todas sus respuestas de esta sesión (incluidas las ya calificadas) para que pueda rendirla de nuevo desde cero.`)) return;
+    this.sessionsSvc.reabrir(this.sessionId, studentId).subscribe(() => {
+      this.selectStudent(studentId);
+      this.cambiado.emit();
     });
   }
 

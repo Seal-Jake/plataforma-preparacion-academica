@@ -35,3 +35,9 @@ export const calificarAttemptSchema = z.object({
 export const toggleAperturaSchema = z.object({
   abiertoParaTodos: z.boolean(),
 });
+
+// El docente reabre el intento de un alumno: borra su estado e intentos de
+// esta sesión para que pueda rendirla de nuevo desde cero.
+export const reabrirSesionSchema = z.object({
+  studentId: z.string().min(1),
+});

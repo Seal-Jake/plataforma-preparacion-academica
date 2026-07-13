@@ -1,11 +1,18 @@
 <div class="calificar-abiertas">
-  <div class="form-field">
-    <label>Estudiante</label>
-    <select [ngModel]="selectedStudentId()" (ngModelChange)="selectStudent($event)">
-      @for (e of enrollments; track e.id) {
-        <option [value]="e.studentId">{{ e.student?.name }}</option>
-      }
-    </select>
+  <div class="form-field estudiante-row">
+    <div>
+      <label>Estudiante</label>
+      <select [ngModel]="selectedStudentId()" (ngModelChange)="selectStudent($event)">
+        @for (e of enrollments; track e.id) {
+          <option [value]="e.studentId">{{ e.student?.name }}</option>
+        }
+      </select>
+    </div>
+    @if (selectedStudentId()) {
+      <button type="button" class="danger small" (click)="reabrirIntento()">
+        <app-icon name="refresh" [size]="13" /> Reabrir intento
+      </button>
+    }
   </div>
 
   @if (result(); as r) {

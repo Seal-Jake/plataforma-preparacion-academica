@@ -80,6 +80,10 @@ export class SessionsService {
     );
   }
 
+  reabrir(id: string, studentId: string) {
+    return this.http.post<{ ok: boolean }>(`/api/sessions/${id}/reabrir`, { studentId });
+  }
+
   finish(id: string) {
     return this.http.post(`/api/sessions/${id}/finish`, {});
   }
