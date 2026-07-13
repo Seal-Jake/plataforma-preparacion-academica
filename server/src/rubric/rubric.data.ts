@@ -59,15 +59,16 @@ async function notaSesionParaEstudiante(session: AcademicSession, studentId: str
   return partes.reduce((acc, p) => acc + (p.peso / pesoTotal) * p.nota, 0);
 }
 
-// Cuenta el trabajo pendiente de calificar del docente en las dos sesiones
-// propias de la unidad (Examen y Proyecto de Unidad): respuestas abiertas ya
-// entregadas por algún alumno pero sin nota, y entregas ya subidas pero sin
-// nota. No cuenta lo que el alumno todavía no entregó (eso es pendiente del
-// alumno, no del docente).
+// Cuenta el trabajo pendiente de calificar del docente en TODA la unidad:
+// sus dos sesiones propias (Examen y Proyecto de Unidad) y las de todos sus
+// temas (Participación en Clase, Práctica, Participación Activa) — respuestas
+// abiertas ya entregadas por algún alumno pero sin nota, y entregas ya
+// subidas pero sin nota. No cuenta lo que el alumno todavía no entregó (eso
+// es pendiente del alumno, no del docente).
 export async function contarPendientesCalificacionUnidad(
   unitId: string
 ): Promise<{ abiertasPendientes: number; entregasPendientes: number; total: number }> {
-  const sesiones = await prisma.academicSession.findMany({ where: { unitId, topicId: null }, select: { id: true } });
+  const sesiones = await prisma.academicSession.findMany({ where: { unitId }, select: { id: true } });
   const sessionIds = sesiones.map((s) => s.id);
   if (sessionIds.length === 0) return { abiertasPendientes: 0, entregasPendientes: 0, total: 0 };
 

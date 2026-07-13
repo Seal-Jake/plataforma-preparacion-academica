@@ -121,8 +121,12 @@ export class UnitDetail implements OnInit {
   }
 
   togglePlanilla() {
-    this.showPlanilla.set(!this.showPlanilla());
-    if (this.showPlanilla() && !this.planilla()) this.cargarPlanilla();
+    const abierta = !this.showPlanilla();
+    this.showPlanilla.set(abierta);
+    // Siempre se recarga al abrir (no solo la primera vez): pudo haber
+    // cambios mientras el panel estaba cerrado que onCalificacionCambiada()
+    // no alcanzó a reflejar aquí.
+    if (abierta) this.cargarPlanilla();
   }
 
   cargarPlanilla() {
@@ -238,6 +242,10 @@ export class UnitDetail implements OnInit {
     const nombre = this.studentName(studentId);
     if (!confirm(`¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`)) return;
     this.entregasSvc.reabrir(sessionId, studentId).subscribe(() => {
+      // Si el formulario de calificar de este mismo alumno estaba abierto,
+      // se cierra: seguiría teniendo la nota vieja precargada y, si se
+      // guardara, recrearía la entrega que se acaba de borrar.
+      if (this.gradingStudentId() === studentId) this.gradingStudentId.set(null);
       this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
       this.onCalificacionCambiada();
     });
@@ -297,14 +305,15 @@ export class UnitDetail implements OnInit {
     if (lineas.length === 0) return;
 
     const noEncontrados: string[] = [];
-    const matches: { studentId: string; label: string }[] = [];
+    const matchesPorStudentId = new Map<string, string>(); // dedupe si el correo aparece repetido en la lista
     for (const linea of lineas) {
       const m = linea.match(emailRegex);
       const email = (m ? m[0] : linea).toLowerCase();
       const student = this.allStudents().find((s) => s.email.toLowerCase() === email);
-      if (student) matches.push({ studentId: student.id, label: `${student.name} (${student.email})` });
+      if (student) matchesPorStudentId.set(student.id, `${student.name} (${student.email})`);
       else noEncontrados.push(linea);
     }
+    const matches = [...matchesPorStudentId.entries()].map(([studentId, label]) => ({ studentId, label }));
 
     if (matches.length === 0) {
       this.importResultado.set({ inscritos: [], noEncontrados });
@@ -321,8 +330,12 @@ export class UnitDetail implements OnInit {
     ).subscribe((resultados) => {
       const inscritos = resultados.filter((r) => r.ok).map((r) => r.label);
       const yaInscritos = resultados.filter((r) => !r.ok).map((r) => r.label);
-      this.importResultado.set({ inscritos, noEncontrados: [...yaInscritos, ...noEncontrados] });
-      this.importText = '';
+      const noResueltos = [...yaInscritos, ...noEncontrados];
+      this.importResultado.set({ inscritos, noEncontrados: noResueltos });
+      // Solo se limpia el texto si no quedó nada por resolver: así el
+      // docente puede corregir y reintentar los correos que fallaron sin
+      // tener que volver a escribir toda la lista.
+      if (noResueltos.length === 0) this.importText = '';
       this.reloadEnrollments();
     });
   }

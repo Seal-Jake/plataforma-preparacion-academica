@@ -309,6 +309,10 @@ export class TopicEditor implements OnInit {
     const nombre = this.studentName(studentId);
     if (!confirm(`¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`)) return;
     this.entregasSvc.reabrir(sessionId, studentId).subscribe(() => {
+      // Si el formulario de calificar de este mismo alumno estaba abierto,
+      // se cierra: seguiría teniendo la nota vieja precargada y, si se
+      // guardara, recrearía la entrega que se acaba de borrar.
+      if (this.gradingStudentId() === studentId) this.gradingStudentId.set(null);
       this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
     });
   }

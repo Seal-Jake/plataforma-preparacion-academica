@@ -78,6 +78,10 @@ export class CalificarAbiertas implements OnInit {
     if (!studentId) return;
     const nombre = this.studentName(studentId);
     if (!confirm(`¿Reabrir el intento de ${nombre}? Se borrarán todas sus respuestas de esta sesión (incluidas las ya calificadas) para que pueda rendirla de nuevo desde cero.`)) return;
+    // Se oculta el formulario mientras se reabre: si quedara visible con las
+    // notas anteriores, un clic en "Guardar" en ese instante las volvería a
+    // grabar sobre el intento recién borrado.
+    this.result.set(null);
     this.sessionsSvc.reabrir(this.sessionId, studentId).subscribe(() => {
       this.selectStudent(studentId);
       this.cambiado.emit();
