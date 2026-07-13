@@ -423,15 +423,24 @@ sessionsRouter.patch(
   validate(calificarAttemptSchema),
   asyncHandler(async (req, res) => {
     const { studentId, nota } = req.body as { studentId: string; nota: number };
-    const attempt = await prisma.attempt.findUnique({
-      where: { sessionId_studentId_questionId: { sessionId: req.params.id, studentId, questionId: req.params.questionId } },
-    });
-    if (!attempt) throw notFound('Respuesta del estudiante');
+    const question = await prisma.question.findUnique({ where: { id: req.params.questionId } });
+    if (!question) throw notFound('Pregunta');
 
     const puntaje = nota / 20;
-    const updated = await prisma.attempt.update({
-      where: { id: attempt.id },
-      data: { puntaje, correct: puntaje === 1 },
+    // Se califica incluso si el alumno nunca respondió (nota 0 o la que
+    // corresponda por criterio del docente): el intento se crea si no existe.
+    const updated = await prisma.attempt.upsert({
+      where: { sessionId_studentId_questionId: { sessionId: req.params.id, studentId, questionId: req.params.questionId } },
+      create: {
+        sessionId: req.params.id,
+        studentId,
+        questionId: req.params.questionId,
+        selectedOptionIds: '[]',
+        shownOptionOrder: '[]',
+        puntaje,
+        correct: puntaje === 1,
+      },
+      update: { puntaje, correct: puntaje === 1 },
     });
     res.json({ puntaje: updated.puntaje, correct: updated.correct });
   })
@@ -486,21 +495,27 @@ sessionsRouter.get(
       where: { sessionId_studentId: { sessionId: session.id, studentId } },
     });
     if (state) await autoSubmitIfExpired(state);
-    const attempts = await prisma.attempt.findMany({
-      where: { sessionId: session.id, studentId },
-      include: {
-        question: {
-          select: { enunciado: true, modoRespuesta: true, archivoMimeType: true, opciones: true },
-        },
-      },
-      orderBy: { answeredAt: 'asc' },
-    });
 
-    const total = JSON.parse(session.questionIds).length as number;
-    // Mientras haya alguna respuesta abierta sin calificar, la nota de la
-    // sesión queda pendiente (no se trata como 0): igual que el resto de la
-    // rúbrica, lo que falta no cuenta hasta que exista.
-    const pendienteCalificacion = attempts.some((a) => a.puntaje === null);
+    const questionIds: string[] = JSON.parse(session.questionIds);
+    const questions = await prisma.question.findMany({
+      where: { id: { in: questionIds } },
+      select: { id: true, enunciado: true, modoRespuesta: true, archivoMimeType: true, opciones: true },
+    });
+    const questionsById = new Map(questions.map((q) => [q.id, q]));
+    const attempts = await prisma.attempt.findMany({ where: { sessionId: session.id, studentId } });
+    const attemptByQuestion = new Map(attempts.map((a) => [a.questionId, a]));
+
+    const total = questionIds.length;
+    // Una pregunta de respuesta abierta queda "pendiente" hasta que el
+    // docente le pone una nota — la haya respondido el alumno o no. Así el
+    // docente puede calificar deliberadamente incluso lo que nunca se
+    // entregó, en vez de que se trate como 0 en silencio.
+    const pendienteCalificacion = questionIds.some((qid) => {
+      const q = questionsById.get(qid);
+      if (!q || q.modoRespuesta !== 'abierta') return false;
+      const a = attemptByQuestion.get(qid);
+      return !a || a.puntaje === null;
+    });
     const sumaPuntaje = attempts.reduce((acc, a) => acc + (a.puntaje ?? 0), 0);
 
     let entrega = null;
@@ -528,20 +543,26 @@ sessionsRouter.get(
       nota: total > 0 && !pendienteCalificacion ? Math.round(((sumaPuntaje / total) * 20 + Number.EPSILON) * 100) / 100 : null,
       pendienteCalificacion,
       entrega,
-      respuestas: attempts.map((a) => {
-        const seleccionadas = new Set(JSON.parse(a.selectedOptionIds) as string[]);
-        return {
-          questionId: a.questionId,
-          enunciado: a.question.enunciado,
-          modoRespuesta: a.question.modoRespuesta,
-          tieneArchivoEnunciado: !!a.question.archivoMimeType,
-          seleccion: a.question.opciones.filter((o) => seleccionadas.has(o.id)).map((o) => o.texto),
-          respuestaTexto: a.respuestaTexto,
-          tieneArchivo: !!a.archivoData,
-          puntaje: a.puntaje,
-          correcta: a.correct,
-          answeredAt: a.answeredAt,
-        };
+      respuestas: questionIds
+        .map((qid) => questionsById.get(qid))
+        .filter((q): q is NonNullable<typeof q> => !!q)
+        .map((q) => {
+          const a = attemptByQuestion.get(q.id);
+          const seleccionadas = new Set(a ? (JSON.parse(a.selectedOptionIds) as string[]) : []);
+          const respondida = q.modoRespuesta === 'abierta' ? !!(a?.respuestaTexto || a?.archivoData) : !!a;
+          return {
+            questionId: q.id,
+            enunciado: q.enunciado,
+            modoRespuesta: q.modoRespuesta,
+            tieneArchivoEnunciado: !!q.archivoMimeType,
+            seleccion: q.opciones.filter((o) => seleccionadas.has(o.id)).map((o) => o.texto),
+            respuestaTexto: a?.respuestaTexto ?? null,
+            tieneArchivo: !!a?.archivoData,
+            respondida,
+            puntaje: a?.puntaje ?? null,
+            correcta: a?.correct ?? null,
+            answeredAt: a?.answeredAt ?? null,
+          };
       }),
     });
   })

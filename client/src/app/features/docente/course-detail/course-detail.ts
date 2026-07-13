@@ -140,6 +140,13 @@ export class CourseDetail implements OnInit {
     return this.entregas().find((e) => e.studentId === studentId);
   }
 
+  estadoEntrega(studentId: string): 'sin_responder' | 'pendiente' | 'calificado' {
+    const e = this.entregaDe(studentId);
+    if (e?.nota !== null && e?.nota !== undefined) return 'calificado';
+    if (e?.entregadoAt) return 'pendiente';
+    return 'sin_responder';
+  }
+
   startCalificar(studentId: string) {
     this.gradingStudentId.set(studentId);
     const e = this.entregaDe(studentId);

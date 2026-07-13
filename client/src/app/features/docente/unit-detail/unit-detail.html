@@ -144,7 +144,7 @@
             <thead>
               <tr>
                 <th>Estudiante</th>
-                <th>Entregado</th>
+                <th>Estado</th>
                 <th>Nota</th>
                 <th></th>
               </tr>
@@ -153,7 +153,19 @@
               @for (e of enrollments(); track e.id) {
                 <tr>
                   <td>{{ e.student?.name }}</td>
-                  <td>{{ entregaDe(e.studentId)?.entregadoAt ? 'Sí' : 'No' }}</td>
+                  <td>
+                    @switch (estadoEntrega(e.studentId)) {
+                      @case ('calificado') {
+                        <span class="badge success"><app-icon name="check-circle" [size]="11" /> Calificado</span>
+                      }
+                      @case ('pendiente') {
+                        <span class="badge warning"><app-icon name="clock" [size]="11" /> Entregó, sin calificar</span>
+                      }
+                      @default {
+                        <span class="badge"><app-icon name="alert-triangle" [size]="11" /> Sin entregar</span>
+                      }
+                    }
+                  </td>
                   <td>{{ entregaDe(e.studentId)?.nota ?? '—' }}</td>
                   <td><button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button></td>
                 </tr>

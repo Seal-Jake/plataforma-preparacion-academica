@@ -37,4 +37,10 @@ export class SessionHistory implements OnInit {
   archivoEnunciadoUrl(questionId: string): string {
     return this.questionsSvc.archivoUrl(questionId);
   }
+
+  estadoRespuesta(resp: { respondida: boolean; puntaje: number | null }): 'sin_responder' | 'pendiente' | 'calificado' {
+    if (resp.puntaje !== null) return 'calificado';
+    if (resp.respondida) return 'pendiente';
+    return 'sin_responder';
+  }
 }

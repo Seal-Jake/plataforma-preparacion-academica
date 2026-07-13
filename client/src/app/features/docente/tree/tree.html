@@ -70,3 +70,15 @@
 } @empty {
   <p class="muted">Todavía no hay cursos creados.</p>
 }
+
+@if (addingCourse()) {
+  <form class="inline-form" [formGroup]="courseForm" (ngSubmit)="saveCourse()">
+    <input formControlName="name" placeholder="Nombre del curso" />
+    <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar</button>
+    <button type="button" class="secondary" (click)="addingCourse.set(false)">Cancelar</button>
+  </form>
+} @else {
+  <button class="secondary" (click)="startAddCourse()">
+    <app-icon name="plus" [size]="14" /> Añadir curso
+  </button>
+}

@@ -44,6 +44,16 @@ export class CalificarAbiertas implements OnInit {
     return this.result()?.respuestas.filter((r) => r.modoRespuesta === 'abierta') ?? [];
   }
 
+  estadoDe(resp: { respondida: boolean; puntaje: number | null }): 'sin_responder' | 'pendiente' | 'calificado' {
+    if (resp.puntaje !== null) return 'calificado';
+    if (resp.respondida) return 'pendiente';
+    return 'sin_responder';
+  }
+
+  calificadasCount(): number {
+    return this.respuestasAbiertas().filter((r) => r.puntaje !== null).length;
+  }
+
   archivoUrl(questionId: string): string {
     return this.sessionsSvc.archivoRespuestaUrl(this.sessionId, questionId, this.selectedStudentId());
   }

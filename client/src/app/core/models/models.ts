@@ -172,9 +172,10 @@ export interface SessionResult {
     seleccion: string[];
     respuestaTexto: string | null;
     tieneArchivo: boolean;
+    respondida: boolean;
     puntaje: number | null;
     correcta: boolean | null;
-    answeredAt: string;
+    answeredAt: string | null;
   }[];
 }
 

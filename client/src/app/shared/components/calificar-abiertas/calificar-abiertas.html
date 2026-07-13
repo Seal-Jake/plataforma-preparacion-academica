@@ -10,18 +10,37 @@
 
   @if (result(); as r) {
     @if (respuestasAbiertas().length > 0) {
+      <p class="muted resumen-calificadas">
+        <app-icon name="check-circle" [size]="13" /> {{ calificadasCount() }} / {{ respuestasAbiertas().length }} preguntas calificadas para este estudiante
+      </p>
+
       @for (resp of respuestasAbiertas(); track resp.questionId) {
-        <div class="respuesta-abierta-item">
-          <p class="enunciado">{{ resp.enunciado }}</p>
+        <div class="respuesta-abierta-item" [class.calificado]="estadoDe(resp) === 'calificado'">
+          <div class="respuesta-header">
+            <p class="enunciado">{{ resp.enunciado }}</p>
+            @switch (estadoDe(resp)) {
+              @case ('calificado') {
+                <span class="badge success"><app-icon name="check-circle" [size]="11" /> Calificado</span>
+              }
+              @case ('pendiente') {
+                <span class="badge warning"><app-icon name="clock" [size]="11" /> Respondió, sin calificar</span>
+              }
+              @default {
+                <span class="badge"><app-icon name="alert-triangle" [size]="11" /> Sin responder</span>
+              }
+            }
+          </div>
+
           @if (resp.respuestaTexto) {
             <p class="muted">{{ resp.respuestaTexto }}</p>
           }
           @if (resp.tieneArchivo) {
             <p class="muted"><app-icon name="file-text" [size]="13" /> <a [href]="archivoUrl(resp.questionId)" target="_blank" rel="noopener">Ver archivo adjunto</a></p>
           }
-          @if (!resp.respuestaTexto && !resp.tieneArchivo) {
-            <p class="muted">El estudiante todavía no ha respondido esta pregunta.</p>
+          @if (!resp.respondida) {
+            <p class="muted">El estudiante no entregó nada. Puedes calificarlo igual (por ejemplo, con 0, o con otra nota si lo evaluaste por otro medio).</p>
           }
+
           <div class="calificar-row">
             <label>Nota (0-20)</label>
             <input type="number" min="0" max="20" step="0.5" [(ngModel)]="notasEnEdicion[resp.questionId]" />

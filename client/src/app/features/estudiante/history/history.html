@@ -73,12 +73,18 @@
                 }
               </td>
               <td>
-                @if (resp.puntaje === null) {
-                  <span class="badge">Pendiente de calificación</span>
-                } @else {
-                  <span class="badge" [class.success]="resp.correcta" [class.danger]="!resp.correcta">
-                    {{ resp.correcta ? 'Correcta' : ('Parcial: ' + (resp.puntaje * 100).toFixed(0) + '%') }}
-                  </span>
+                @switch (estadoRespuesta(resp)) {
+                  @case ('sin_responder') {
+                    <span class="badge">Sin responder</span>
+                  }
+                  @case ('pendiente') {
+                    <span class="badge warning">Pendiente de calificación</span>
+                  }
+                  @default {
+                    <span class="badge" [class.success]="resp.correcta" [class.danger]="!resp.correcta">
+                      {{ resp.correcta ? 'Correcta' : ('Parcial: ' + ((resp.puntaje ?? 0) * 100).toFixed(0) + '%') }}
+                    </span>
+                  }
                 }
               </td>
               <td>{{ resp.answeredAt | date: 'short' }}</td>

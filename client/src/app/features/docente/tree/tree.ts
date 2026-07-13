@@ -19,9 +19,11 @@ export class Tree implements OnInit {
   expandedUnits = signal<Set<string>>(new Set());
   addingUnitToCourse = signal<string | null>(null);
   addingTopicToUnit = signal<string | null>(null);
+  addingCourse = signal(false);
 
   unitForm = this.fb.group({ name: ['', Validators.required] });
   topicForm = this.fb.group({ name: ['', Validators.required], subtemas: [''] });
+  courseForm = this.fb.group({ name: ['', Validators.required] });
 
   ngOnInit() {
     this.reload();
@@ -40,6 +42,19 @@ export class Tree implements OnInit {
 
   isExpanded(unitId: string) {
     return this.expandedUnits().has(unitId);
+  }
+
+  startAddCourse() {
+    this.addingCourse.set(true);
+    this.courseForm.reset();
+  }
+
+  saveCourse() {
+    if (this.courseForm.invalid) return;
+    this.courseSvc.create({ name: this.courseForm.value.name! }).subscribe(() => {
+      this.addingCourse.set(false);
+      this.reload();
+    });
   }
 
   startAddUnit(courseId: string) {

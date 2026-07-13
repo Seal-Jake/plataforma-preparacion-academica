@@ -7,10 +7,32 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.75rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.respuesta-abierta-item.calificado {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 6%, transparent);
+}
+.respuesta-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
 }
 .respuesta-abierta-item .enunciado {
   font-weight: 600;
-  margin: 0 0 0.4rem;
+  margin: 0;
+}
+.respuesta-header .badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.resumen-calificadas {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 500;
 }
 .calificar-row {
   display: flex;
