@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideAppInitializer, inject } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withInterceptors, withFetch } from '@angular/common/http';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { catchError, of } from 'rxjs';
@@ -12,7 +12,7 @@ import { AuthService } from './core/services/auth.service';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    provideRouter(routes, withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' })),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
     provideCharts(withDefaultRegisterables()),
     provideAppInitializer(() => {

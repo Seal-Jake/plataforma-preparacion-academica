@@ -5,12 +5,13 @@ import { PreferencesService } from './core/services/preferences.service';
 import { Icon } from './shared/components/icon/icon';
 import { Toast } from './shared/components/toast/toast';
 import { ConfirmDialog } from './shared/components/confirm-dialog/confirm-dialog';
+import { NotificationBell } from './shared/components/notification-bell/notification-bell';
 
 const CLASES_ACENTO = ['accent-azul', 'accent-magenta', 'accent-violeta', 'accent-cian'];
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Icon, Toast, ConfirmDialog],
+  imports: [RouterOutlet, RouterLink, Icon, Toast, ConfirmDialog, NotificationBell],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

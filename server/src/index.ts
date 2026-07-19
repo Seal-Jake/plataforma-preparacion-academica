@@ -20,6 +20,7 @@ import { rubricRouter } from './rubric/rubric.routes';
 import { exportRouter } from './export/export.routes';
 import { dashboardRouter } from './dashboard/dashboard.routes';
 import { profileRouter } from './profile/profile.routes';
+import { notificationsRouter } from './notifications/notifications.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/api/rubric', rubricRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/profile', profileRouter);
+app.use('/api/notifications', notificationsRouter);
 
 app.use('/api', notFoundHandler);
 

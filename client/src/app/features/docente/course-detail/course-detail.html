@@ -30,9 +30,14 @@
     <section class="card">
       <div class="section-header">
         <h2 class="section-title"><app-icon name="exam" [size]="18" /> Tareas de ámbito curso</h2>
-        <button class="secondary small" (click)="showCreateForm.set(!showCreateForm())">
-          <app-icon name="plus" [size]="13" /> {{ showCreateForm() ? 'Cancelar' : 'Crear tarea' }}
-        </button>
+        <div class="header-actions">
+          <a [routerLink]="['/docente/guia']" fragment="paso-curso" class="help-link" title="Ver guía: tareas de curso">
+            <app-icon name="info" [size]="15" />
+          </a>
+          <button class="secondary small" (click)="showCreateForm.set(!showCreateForm())">
+            <app-icon name="plus" [size]="13" /> {{ showCreateForm() ? 'Cancelar' : 'Crear tarea' }}
+          </button>
+        </div>
       </div>
       <p class="muted">
         Crea tantos Exámenes Finales o Investigaciones Finales como quieras, con preguntas de cualquier tema del

@@ -18,6 +18,10 @@
   font-weight: 700;
 }
 
+.topbar-bell {
+  margin-left: 0.5rem;
+}
+
 .menu-toggle {
   display: none;
   background: transparent;

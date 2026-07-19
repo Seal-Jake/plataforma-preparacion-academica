@@ -4,20 +4,45 @@
 
 <div class="rubrica-detalle">
   @for (c of rubrica().categorias; track c.nombre) {
-    <div class="detalle-item">
-      <span>
-        {{ c.nombre }} ({{ c.peso }}%)
-        @if (c.cantidad !== undefined) {
-          <span class="detalle-cantidad">
-            @if (c.cantidad === 0) {
-              — sin tareas creadas
-            } @else {
-              — promedio de {{ c.cantidadConDatos }}/{{ c.cantidad }} {{ c.cantidad === 1 ? 'tarea' : 'tareas' }}
-            }
-          </span>
-        }
-      </span>
-      <strong>{{ c.tieneDatos ? c.nota : 'Sin datos' }}</strong>
+    <div class="detalle-item" [class.expandible]="!!c.instancias?.length">
+      <button
+        type="button"
+        class="detalle-header"
+        [disabled]="!c.instancias?.length"
+        (click)="toggleExpandida(c.nombre)"
+      >
+        <span>
+          {{ c.nombre }} ({{ c.peso }}%)
+          @if (c.cantidad !== undefined) {
+            <span class="detalle-cantidad">
+              @if (c.cantidad === 0) {
+                — sin tareas creadas
+              } @else {
+                — promedio de {{ c.cantidadConDatos }}/{{ c.cantidad }} {{ c.cantidad === 1 ? 'tarea' : 'tareas' }}
+                <span class="toggle-caret">{{ expandidas().has(c.nombre) ? '▾' : '▸' }}</span>
+              }
+            </span>
+          }
+        </span>
+        <strong>{{ c.tieneDatos ? c.nota : 'Sin datos' }}</strong>
+      </button>
+
+      @if (expandidas().has(c.nombre) && c.instancias?.length) {
+        <ul class="desglose-tareas">
+          @for (t of c.instancias; track t.title + $index) {
+            <li>
+              <span class="desglose-titulo">{{ t.title }}</span>
+              @if (t.vencidaSinEntrega) {
+                <span class="badge danger" title="Venció y no se entregó nada: se calificó 0 automáticamente">
+                  0 — vencida sin entrega
+                </span>
+              } @else {
+                <span class="desglose-nota">{{ t.nota ?? 'Sin calificar aún' }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
     </div>
   }
   <div class="detalle-item final">

@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { RubricaResultado } from '../../../core/models/models';
@@ -13,6 +13,15 @@ const PALETA = ['#5b8cff', '#35c48f', '#e6b23a', '#e2555a', '#a86bf0', '#3ac0d6'
 })
 export class RubricChart {
   rubrica = input.required<RubricaResultado>();
+
+  expandidas = signal<Set<string>>(new Set());
+
+  toggleExpandida(nombre: string) {
+    const actual = new Set(this.expandidas());
+    if (actual.has(nombre)) actual.delete(nombre);
+    else actual.add(nombre);
+    this.expandidas.set(actual);
+  }
 
   chartData = computed<ChartData<'bar'>>(() => {
     const r = this.rubrica();

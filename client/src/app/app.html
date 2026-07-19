@@ -2,6 +2,7 @@
   @if (auth.isAuthenticated()) {
     <header class="topbar">
       <div class="brand link-with-icon"><app-icon name="book-open" [size]="20" /> Plataforma de Preparación Académica</div>
+      <app-notification-bell class="topbar-bell" />
       <button
         type="button"
         class="menu-toggle"

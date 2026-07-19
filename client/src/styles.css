@@ -324,6 +324,27 @@ th {
   color: var(--fg-muted);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.help-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 1.6rem;
+  height: 1.6rem;
+  justify-content: center;
+}
+.help-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .link-with-icon {
   display: inline-flex;
   align-items: center;

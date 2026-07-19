@@ -1,0 +1,28 @@
+@if (auth.user()?.notificationsEnabled !== false) {
+  <div class="bell-wrap">
+    <button type="button" class="bell-btn" (click)="toggle()" [attr.aria-expanded]="open()" aria-label="Notificaciones">
+      <app-icon name="bell" [size]="18" />
+      @if (items().length > 0) {
+        <span class="bell-count">{{ items().length > 9 ? '9+' : items().length }}</span>
+      }
+    </button>
+
+    @if (open()) {
+      <div class="bell-panel">
+        @if (items().length > 0) {
+          <ul class="bell-list">
+            @for (item of items(); track item.id) {
+              <li>
+                <button type="button" class="bell-item" [class.danger]="item.tipo === 'vencida'" (click)="ir(item)">
+                  {{ item.mensaje }}
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted bell-empty">Sin notificaciones por ahora.</p>
+        }
+      </div>
+    }
+  </div>
+}

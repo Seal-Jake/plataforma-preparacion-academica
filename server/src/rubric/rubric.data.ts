@@ -3,6 +3,11 @@ import type { AcademicSession } from '@prisma/client';
 import { calcularRubrica, RubricaResultado } from './rubric.service';
 import { TIPOS_TAREA } from '../lib/enums';
 
+interface NotaSesion {
+  nota: number | null;
+  vencidaSinEntrega: boolean;
+}
+
 function promedio(valores: number[]): number {
   return valores.reduce((acc, v) => acc + v, 0) / valores.length;
 }
@@ -20,11 +25,11 @@ function promedio(valores: number[]): number {
 //    automáticamente (la tarea venció sin nada). Si todavía no vence, o si
 //    hay algo pendiente de calificar, se deja en null (no cuenta como cero
 //    en el promedio — ver calcularRubrica).
-async function notaSesionParaEstudiante(session: AcademicSession, studentId: string): Promise<number | null> {
+async function notaSesionParaEstudiante(session: AcademicSession, studentId: string): Promise<NotaSesion> {
   const entrega = await prisma.entrega.findUnique({
     where: { sessionId_studentId: { sessionId: session.id, studentId } },
   });
-  if (entrega?.nota !== null && entrega?.nota !== undefined) return entrega.nota;
+  if (entrega?.nota !== null && entrega?.nota !== undefined) return { nota: entrega.nota, vencidaSinEntrega: false };
 
   const questionIds: string[] = JSON.parse(session.questionIds);
   let nota: number | null = null;
@@ -54,8 +59,8 @@ async function notaSesionParaEstudiante(session: AcademicSession, studentId: str
   }
 
   const vencida = !!session.dueDate && new Date(session.dueDate).getTime() < Date.now();
-  if (nota === null && !huboAlgo && vencida) return 0;
-  return nota;
+  if (nota === null && !huboAlgo && vencida) return { nota: 0, vencidaSinEntrega: true };
+  return { nota, vencidaSinEntrega: false };
 }
 
 // Cuenta el trabajo pendiente de calificar del docente en todo el curso:
@@ -122,19 +127,29 @@ export async function calcularRubricaCurso(courseId: string, studentId: string):
     porTipo.set(s.tipoFijo, [...(porTipo.get(s.tipoFijo) ?? []), s]);
   }
 
-  const categorias: { nombre: string; peso: number; nota: number | null; cantidad: number; cantidadConDatos: number }[] =
-    [];
+  const categorias: {
+    nombre: string;
+    peso: number;
+    nota: number | null;
+    cantidad: number;
+    cantidadConDatos: number;
+    instancias: { title: string; nota: number | null; vencidaSinEntrega: boolean }[];
+  }[] = [];
   for (const def of TIPOS_TAREA) {
     const instancias = porTipo.get(def.tipo) ?? [];
-    const notas = (await Promise.all(instancias.map((s) => notaSesionParaEstudiante(s, studentId)))).filter(
-      (n): n is number => n !== null
-    );
+    const notasSesiones = await Promise.all(instancias.map((s) => notaSesionParaEstudiante(s, studentId)));
+    const notas = notasSesiones.map((n) => n.nota).filter((n): n is number => n !== null);
     categorias.push({
       nombre: def.nombre,
       peso: def.peso,
       nota: notas.length > 0 ? promedio(notas) : null,
       cantidad: instancias.length,
       cantidadConDatos: notas.length,
+      instancias: instancias.map((s, i) => ({
+        title: s.title,
+        nota: notasSesiones[i].nota,
+        vencidaSinEntrega: notasSesiones[i].vencidaSinEntrega,
+      })),
     });
   }
 

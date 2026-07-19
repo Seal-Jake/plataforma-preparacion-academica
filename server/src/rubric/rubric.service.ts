@@ -15,12 +15,19 @@
  *   explícito qué fracción de la rúbrica (en peso) ya tiene información real.
  */
 
+export interface InstanciaTarea {
+  title: string;
+  nota: number | null;
+  vencidaSinEntrega: boolean;
+}
+
 export interface CategoriaInput {
   nombre: string;
   peso: number; // 0-100
   nota: number | null; // 0-20, o null si aún no hay datos
   cantidad?: number; // cuántas tareas de este tipo existen (informativo)
   cantidadConDatos?: number; // cuántas de esas ya tienen nota (informativo)
+  instancias?: InstanciaTarea[]; // desglose de cada tarea individual (informativo)
 }
 
 export interface CategoriaResuelta {
@@ -30,6 +37,7 @@ export interface CategoriaResuelta {
   tieneDatos: boolean;
   cantidad?: number;
   cantidadConDatos?: number;
+  instancias?: InstanciaTarea[];
 }
 
 export interface RubricaResultado {
@@ -52,6 +60,7 @@ export function calcularRubrica(categorias: CategoriaInput[]): RubricaResultado 
     tieneDatos: c.nota !== null && c.nota !== undefined,
     cantidad: c.cantidad,
     cantidadConDatos: c.cantidadConDatos,
+    instancias: c.instancias,
   }));
 
   const conDatos = resueltas.filter((c) => c.tieneDatos);

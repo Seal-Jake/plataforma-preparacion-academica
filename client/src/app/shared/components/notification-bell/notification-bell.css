@@ -1,0 +1,85 @@
+.bell-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.bell-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--fg);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 50%;
+}
+.bell-btn:hover {
+  color: var(--accent);
+}
+
+.bell-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  border-radius: 999px;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.bell-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 300px;
+  max-width: min(90vw, 340px);
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+  padding: 0.4rem;
+}
+
+.bell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.bell-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius);
+  color: var(--fg);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.bell-item:hover {
+  background: var(--bg-elevated);
+}
+.bell-item.danger {
+  color: var(--danger);
+}
+
+.bell-empty {
+  padding: 0.6rem;
+  margin: 0;
+  font-size: 0.82rem;
+}

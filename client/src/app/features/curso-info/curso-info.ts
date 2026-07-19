@@ -37,8 +37,21 @@ export class CursoInfo implements OnInit {
   }
 
   startEdit() {
-    this.textoEditado = this.info()?.infoEvaluacion || '';
+    this.textoEditado = this.info()?.infoEvaluacion || this.plantillaPorDefecto();
     this.editando.set(true);
+  }
+
+  // Precarga una plantilla con los tipos de tarea y sus pesos para que el
+  // docente solo la edite/complete en vez de escribir todo desde cero.
+  private plantillaPorDefecto(): string {
+    const categorias = this.info()?.categoriasCurso ?? [];
+    if (categorias.length === 0) return '';
+    const lineas = categorias.map((c) => `- ${c.nombre}: ${c.peso}% de la nota final.`).join('\n');
+    return (
+      `La nota final del curso se calcula combinando estos tipos de tarea:\n${lineas}\n\n` +
+      `Cada tipo se promedia entre todas las tareas de ese tipo creadas en el curso. ` +
+      `Completa aquí cualquier detalle adicional sobre la metodología de evaluación (criterios, fechas importantes, etc.).`
+    );
   }
 
   guardar() {

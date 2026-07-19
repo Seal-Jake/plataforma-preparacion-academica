@@ -180,6 +180,12 @@ export interface SessionResult {
   }[];
 }
 
+export interface InstanciaTarea {
+  title: string;
+  nota: number | null;
+  vencidaSinEntrega: boolean;
+}
+
 export interface CategoriaRubrica {
   nombre: string;
   peso: number;
@@ -187,6 +193,7 @@ export interface CategoriaRubrica {
   tieneDatos: boolean;
   cantidad?: number;
   cantidadConDatos?: number;
+  instancias?: InstanciaTarea[];
 }
 
 export interface RubricaResultado {
@@ -260,4 +267,17 @@ export interface DashboardResponse {
 export interface CourseInfoResponse {
   infoEvaluacion: string | null;
   categoriasCurso: { nombre: string; peso: number }[];
+}
+
+export type TipoNotificacion = 'vence_pronto' | 'vencida' | 'pendiente_calificar';
+
+export interface NotificationItem {
+  id: string;
+  tipo: TipoNotificacion;
+  mensaje: string;
+  link: string[];
+}
+
+export interface NotificationsResponse {
+  items: NotificationItem[];
 }
