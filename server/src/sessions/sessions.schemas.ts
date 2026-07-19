@@ -1,17 +1,25 @@
 import { z } from 'zod';
 import { LIMITE_INVESTIGACION, LIMITE_TEXTO_CORTO } from '../lib/textLimits';
+import { TIPO_TAREA_IDS } from '../lib/enums';
 
-// Las sesiones ya no se crean libremente: cada tema/unidad/curso recibe
-// automáticamente sus sesiones fijas (ver TIPOS_SESION_FIJOS). El docente
-// solo las configura: qué preguntas lleva, fecha límite, tiempo, evidencia.
+// El docente crea libremente tantas tareas de cada tipo como quiera. El
+// ámbito (courseId/unitId/topicId) se valida en la ruta según a qué nivel
+// pertenece ese tipo de tarea (ver TIPOS_TAREA_POR_ID).
+export const crearTareaSchema = z.object({
+  tipo: z.enum(TIPO_TAREA_IDS),
+  courseId: z.string().min(1).optional(),
+  unitId: z.string().min(1).optional(),
+  topicId: z.string().min(1).optional(),
+  title: z.string().trim().min(1).max(LIMITE_TEXTO_CORTO),
+  dueDate: z.coerce.date().optional().nullable(),
+  timeLimitMinutes: z.number().int().min(1).max(600).optional().nullable(),
+});
+
 export const sessionUpdateSchema = z.object({
   title: z.string().trim().min(1).max(LIMITE_TEXTO_CORTO).optional(),
   questionIds: z.array(z.string().min(1)).optional(),
   dueDate: z.coerce.date().optional().nullable(),
   timeLimitMinutes: z.number().int().min(1).max(600).optional().nullable(),
-  requiereEvidencia: z.boolean().optional(),
-  pesoAciertos: z.number().min(0).max(100).optional(),
-  pesoEvidencia: z.number().min(0).max(100).optional(),
 });
 
 export const answerSchema = z.object({

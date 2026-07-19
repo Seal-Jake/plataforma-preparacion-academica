@@ -6,21 +6,16 @@ import { FilaPlanilla, PendientesCalificacion, RubricaResultado } from '../model
 export class RubricService {
   constructor(private http: HttpClient) {}
 
-  getUnidad(unitId: string, studentId?: string) {
-    const params = studentId ? { studentId } : undefined;
-    return this.http.get<RubricaResultado>(`/api/rubric/unit/${unitId}`, { params });
-  }
-
   getCurso(courseId: string, studentId?: string) {
     const params = studentId ? { studentId } : undefined;
     return this.http.get<RubricaResultado>(`/api/rubric/course/${courseId}`, { params });
   }
 
-  getPlanillaUnidad(unitId: string) {
-    return this.http.get<FilaPlanilla[]>(`/api/rubric/unit/${unitId}/planilla`);
+  getPlanillaCurso(courseId: string) {
+    return this.http.get<FilaPlanilla[]>(`/api/rubric/course/${courseId}/planilla`);
   }
 
-  getPendientesUnidad(unitId: string) {
-    return this.http.get<PendientesCalificacion>(`/api/rubric/unit/${unitId}/pendientes`);
+  getPendientesCurso(courseId: string) {
+    return this.http.get<PendientesCalificacion>(`/api/rubric/course/${courseId}/pendientes`);
   }
 }

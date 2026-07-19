@@ -16,3 +16,20 @@ section.card {
   background: var(--accent);
   transition: width 0.2s;
 }
+
+.curso-rubrica {
+  margin-bottom: 1.75rem;
+}
+.curso-rubrica:last-child {
+  margin-bottom: 0;
+}
+.curso-rubrica-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.curso-rubrica-header h3 {
+  margin: 0;
+}

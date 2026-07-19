@@ -2,20 +2,13 @@
   <a routerLink="/estudiante/cursos" class="link-with-icon"><app-icon name="arrow-right" [size]="14" style="transform: rotate(180deg)" /> Volver a mis cursos</a>
   <h1>{{ u.name }}</h1>
 
-  <section class="card">
-    <div class="section-header">
-      <h2 class="section-title"><app-icon name="chart" [size]="18" /> Mi rúbrica</h2>
-      <button class="secondary small" (click)="exportarProgreso()"><app-icon name="download" [size]="13" /> Descargar mi progreso</button>
-    </div>
-    @if (rubrica(); as r) {
-      <app-rubric-chart [rubrica]="r" />
-    } @else {
-      <p class="muted">Cargando rúbrica...</p>
-    }
-  </section>
+  <p class="muted">
+    <app-icon name="info" [size]="13" /> Tu progreso de notas del curso completo está en el
+    <a routerLink="/estudiante">Dashboard</a>.
+  </p>
 
   <section class="card">
-    <h2 class="section-title"><app-icon name="exam" [size]="18" /> Examen y Proyecto de la Unidad</h2>
+    <h2 class="section-title"><app-icon name="exam" [size]="18" /> Tareas de la unidad</h2>
     @if (sessions().length > 0) {
       <table>
         <thead>
@@ -51,14 +44,14 @@
       <app-empty-state
         icon="exam"
         title="Todavía no hay nada disponible"
-        description="Cuando tu docente active el Examen o el Proyecto de esta unidad, aparecerá aquí."
+        description="Cuando tu docente cree y active una tarea de esta unidad, aparecerá aquí."
       />
     }
   </section>
 
   <section class="card">
     <h2 class="section-title"><app-icon name="folder" [size]="18" /> Temas de la unidad</h2>
-    <p class="muted">Haz clic en un tema para ver su contenido (Concepto y Marco Teórico, Mecánica y Ejemplos, Actividad Práctica, Aplicación a Economía y Administración) y sus sesiones de Participación en Clase, Práctica y Participación Activa.</p>
+    <p class="muted">Haz clic en un tema para ver su contenido (Concepto y Marco Teórico, Mecánica y Ejemplos, Actividad Práctica, Aplicación a Economía y Administración) y sus Tareas de Participación Activa y Prácticas Calificadas.</p>
     <ul class="topic-list">
       @for (t of u.topics; track t.id) {
         <li>

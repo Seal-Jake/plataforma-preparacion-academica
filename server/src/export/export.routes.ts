@@ -5,12 +5,7 @@ import { prisma } from '../lib/prisma';
 import { asyncHandler } from '../lib/asyncHandler';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, badRequest, forbidden } from '../lib/errors';
-import {
-  calcularRubricaCurso,
-  calcularRubricaUnidad,
-  etiquetasCategoriasCurso,
-  etiquetasCategoriasUnidad,
-} from '../rubric/rubric.data';
+import { calcularRubricaCurso, etiquetasCategoriasCurso } from '../rubric/rubric.data';
 import { RubricaResultado } from '../rubric/rubric.service';
 
 export const exportRouter = Router();
@@ -62,66 +57,12 @@ function renderProgresoPdf(
   doc.end();
 }
 
-async function tablaNotasUnidad(unitId: string) {
-  const unit = await prisma.unit.findUnique({ where: { id: unitId } });
-  if (!unit) throw notFound('Unidad');
-
-  const categorias = etiquetasCategoriasUnidad();
-  const enrollments = await prisma.enrollment.findMany({
-    where: { courseId: unit.courseId },
-    include: { student: true },
-  });
-
-  const filas = await Promise.all(
-    enrollments.map(async (e) => {
-      const r = await calcularRubricaUnidad(unitId, e.studentId);
-      const fila: Record<string, string | number> = {
-        estudiante: e.student.name,
-        email: e.student.email,
-      };
-      for (const c of categorias) {
-        const encontrada = r.categorias.find((rc) => rc.nombre === c.nombre);
-        fila[c.nombre] = encontrada?.nota ?? '';
-      }
-      fila['Nota Final'] = r.notaFinal ?? '';
-      fila['% Rúbrica con datos'] = r.porcentajePonderadoConDatos;
-      return fila;
-    })
-  );
-
-  const columns = [
-    { key: 'estudiante', header: 'Estudiante' },
-    { key: 'email', header: 'Correo' },
-    ...categorias.map((c) => ({ key: c.nombre, header: `${c.nombre} (${c.peso}%)` })),
-    { key: 'Nota Final', header: 'Nota Final' },
-    { key: '% Rúbrica con datos', header: '% Rúbrica con datos' },
-  ];
-
-  return { unitName: unit.name, filas, columns };
-}
-
-exportRouter.get(
-  '/units/:unitId/csv',
-  requireAuth,
-  requireRole('docente'),
-  asyncHandler(async (req, res) => {
-    const { filas, columns } = await tablaNotasUnidad(req.params.unitId);
-    const csv = stringify(filas, { header: true, columns });
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="notas-unidad-${req.params.unitId}.csv"`);
-    res.send(csv);
-  })
-);
-
 exportRouter.get(
   '/courses/:courseId/csv',
   requireAuth,
   requireRole('docente'),
   asyncHandler(async (req, res) => {
-    const course = await prisma.course.findUnique({
-      where: { id: req.params.courseId },
-      include: { units: { orderBy: { orderIndex: 'asc' } } },
-    });
+    const course = await prisma.course.findUnique({ where: { id: req.params.courseId } });
     if (!course) throw notFound('Curso');
 
     const categoriasCurso = etiquetasCategoriasCurso();
@@ -151,16 +92,10 @@ exportRouter.get(
       { key: '% Rúbrica con datos', header: '% Rúbrica con datos' },
     ];
 
-    const bloques = [`Nota final del curso\n${stringify(filasCurso, { header: true, columns: columnsCurso })}`];
-    for (const u of course.units) {
-      const { unitName, filas, columns } = await tablaNotasUnidad(u.id);
-      const tabla = stringify(filas, { header: true, columns });
-      bloques.push(`Unidad: ${unitName}\n${tabla}`);
-    }
-
+    const csv = stringify(filasCurso, { header: true, columns: columnsCurso });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="notas-curso-${req.params.courseId}.csv"`);
-    res.send(bloques.join('\n'));
+    res.send(csv);
   })
 );
 
@@ -208,41 +143,6 @@ exportRouter.get(
 
 // Progreso de notas imprimible: el alumno descarga el suyo, o el docente el
 // de cualquier alumno inscrito (pasando ?studentId=).
-exportRouter.get(
-  '/units/:unitId/progreso.pdf',
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const unit = await prisma.unit.findUnique({ where: { id: req.params.unitId } });
-    if (!unit) throw notFound('Unidad');
-
-    let studentId: string;
-    if (req.user!.role === 'docente') {
-      const q = req.query.studentId as string | undefined;
-      if (!q) throw badRequest('studentId es requerido para el docente.');
-      studentId = q;
-    } else {
-      studentId = req.user!.sub;
-      const enrolled = await prisma.enrollment.findUnique({
-        where: { studentId_courseId: { studentId, courseId: unit.courseId } },
-      });
-      if (!enrolled) throw forbidden('No estás inscrito en el curso de esta unidad.');
-    }
-
-    const student = await prisma.user.findUnique({ where: { id: studentId } });
-    if (!student) throw notFound('Estudiante');
-
-    const rubrica = await calcularRubricaUnidad(unit.id, studentId);
-    renderProgresoPdf(
-      res,
-      `progreso-${unit.name.replace(/[^\w\- ]/g, '')}.pdf`,
-      `Progreso de notas — ${unit.name}`,
-      'Rúbrica de la unidad',
-      student.name,
-      rubrica
-    );
-  })
-);
-
 exportRouter.get(
   '/courses/:courseId/progreso.pdf',
   requireAuth,

@@ -6,8 +6,7 @@ import { validate } from '../lib/validate';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, forbidden } from '../lib/errors';
 import { LIMITE_TEORIA, LIMITE_TEXTO_CORTO } from '../lib/textLimits';
-import { crearSesionesFijasCurso } from '../lib/sesionesFijas';
-import { etiquetasCategoriasCurso, etiquetasCategoriasUnidad } from '../rubric/rubric.data';
+import { etiquetasCategoriasCurso } from '../rubric/rubric.data';
 
 export const coursesRouter = Router();
 
@@ -78,21 +77,11 @@ coursesRouter.get(
       if (!enrolled) throw forbidden('No estás inscrito en este curso.');
     }
 
-    const units = await prisma.unit.findMany({
-      where: { courseId: course.id },
-      orderBy: { orderIndex: 'asc' },
-    });
-
-    // La rúbrica es fija en toda la plataforma: las mismas categorías y
-    // pesos aplican a cada unidad y al curso completo (ver TIPOS_SESION_FIJOS).
+    // La rúbrica es una sola por curso (6 tipos de tarea con peso fijo, ver
+    // TIPOS_TAREA): ya no hay una tabla de pesos distinta por unidad.
     res.json({
       infoEvaluacion: course.infoEvaluacion,
       categoriasCurso: etiquetasCategoriasCurso(),
-      unidades: units.map((u) => ({
-        unitId: u.id,
-        unitName: u.name,
-        categorias: etiquetasCategoriasUnidad(),
-      })),
     });
   })
 );
@@ -115,7 +104,6 @@ coursesRouter.post(
   validate(courseSchema),
   asyncHandler(async (req, res) => {
     const course = await prisma.course.create({ data: req.body });
-    await crearSesionesFijasCurso(course.id);
     res.status(201).json(course);
   })
 );

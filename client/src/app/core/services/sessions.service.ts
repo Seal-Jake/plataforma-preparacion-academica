@@ -1,15 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { AcademicSession, SessionQuestionsResponse, SessionResult } from '../models/models';
+import { AcademicSession, SessionQuestionsResponse, SessionResult, TipoTarea } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class SessionsService {
   constructor(private http: HttpClient) {}
 
-  // Las sesiones son fijas (ya no se crean libremente): exactamente una de
-  // las tres opciones debe indicarse, según el nivel de la sesión buscada.
-  // Por defecto, unitId trae también las sesiones de los temas de esa
-  // unidad; pasa soloDirectas:true para traer solo las 2 propias de unidad.
+  // El docente crea tantas tareas de cada tipo como quiera: unitId trae
+  // también las tareas de los temas de esa unidad (por defecto); pasa
+  // soloDirectas:true para traer solo las propias de la unidad.
   list(params: { courseId?: string; unitId?: string; topicId?: string; soloDirectas?: boolean }) {
     const httpParams: Record<string, string> = {};
     if (params.courseId) httpParams['courseId'] = params.courseId;
@@ -23,6 +22,22 @@ export class SessionsService {
     return this.http.get<AcademicSession>(`/api/sessions/${id}`);
   }
 
+  create(data: {
+    tipo: TipoTarea;
+    courseId?: string;
+    unitId?: string;
+    topicId?: string;
+    title: string;
+    dueDate?: string | null;
+    timeLimitMinutes?: number | null;
+  }) {
+    return this.http.post<AcademicSession>('/api/sessions', data);
+  }
+
+  delete(id: string) {
+    return this.http.delete<{ ok: boolean }>(`/api/sessions/${id}`);
+  }
+
   update(
     id: string,
     data: Partial<{
@@ -30,9 +45,6 @@ export class SessionsService {
       questionIds: string[];
       dueDate: string | null;
       timeLimitMinutes: number | null;
-      requiereEvidencia: boolean;
-      pesoAciertos: number;
-      pesoEvidencia: number;
     }>
   ) {
     return this.http.put<AcademicSession>(`/api/sessions/${id}`, data);

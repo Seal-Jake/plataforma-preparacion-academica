@@ -53,31 +53,6 @@
       <span class="badge success"><app-icon name="check-circle" [size]="11" /> Guardado</span>
     }
   </section>
-
-  <section class="card">
-    <h2 class="section-title"><app-icon name="chart" [size]="18" /> Ponderación por unidad</h2>
-    @for (u of i.unidades; track u.unitId) {
-      <div class="unidad-block">
-        <h3>{{ u.unitName }}</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Categoría</th>
-              <th>Peso</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (c of u.categorias; track c.nombre) {
-              <tr>
-                <td>{{ c.nombre }}</td>
-                <td>{{ c.peso }}%</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  </section>
 } @else {
   <p class="muted">Cargando información del curso...</p>
 }

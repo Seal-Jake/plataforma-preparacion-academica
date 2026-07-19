@@ -7,14 +7,17 @@ export type TipoPregunta =
   | 'problema_lectura'
   | 'interpretacion_grafica'
   | 'proposicion_vf';
-export type TipoSesionFijo =
-  | 'participacion_clase'
-  | 'practica'
-  | 'participacion_activa'
+// Los 6 tipos de tarea de la plataforma: el docente crea libremente tantas
+// instancias de cada uno como quiera (ver server/src/lib/enums.ts).
+export type TipoTarea =
+  | 'tpa'
+  | 'practica_calificada'
   | 'examen_unidad'
-  | 'proyecto_unidad'
-  | 'examen_final_curso'
-  | 'proyecto_final_curso';
+  | 'examen_final'
+  | 'investigacion_unidad'
+  | 'investigacion_final';
+export type AmbitoTarea = 'tema' | 'unidad' | 'curso';
+export type ModoTarea = 'examen' | 'entrega';
 export type ThemePreference = 'dark' | 'light';
 
 export interface UserInfo {
@@ -105,7 +108,7 @@ export interface AcademicSession {
   courseId?: string | null;
   unitId?: string | null;
   topicId?: string | null;
-  tipoFijo: TipoSesionFijo;
+  tipoFijo: TipoTarea;
   title: string;
   questionIds: string[];
   dueDate?: string | null;
@@ -242,13 +245,19 @@ export interface DashboardPendiente {
   estado: 'no_iniciado' | 'en_curso';
 }
 
+export interface RubricaPorCurso {
+  courseId: string;
+  courseName: string;
+  rubrica: RubricaResultado;
+}
+
 export interface DashboardResponse {
   pendientes: DashboardPendiente[];
   progresoGeneral: { totalCarpetas: number; completadas: number; porcentaje: number };
+  rubricasPorCurso: RubricaPorCurso[];
 }
 
 export interface CourseInfoResponse {
   infoEvaluacion: string | null;
   categoriasCurso: { nombre: string; peso: number }[];
-  unidades: { unitId: string; unitName: string; categorias: { nombre: string; peso: number }[] }[];
 }

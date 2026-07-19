@@ -16,21 +16,12 @@ export class ExportService {
     window.URL.revokeObjectURL(objectUrl);
   }
 
-  exportUnitCsv(unitId: string) {
-    return this.download(`/api/export/units/${unitId}/csv`, `notas-unidad-${unitId}.csv`);
-  }
-
   exportCourseCsv(courseId: string) {
     return this.download(`/api/export/courses/${courseId}/csv`, `notas-curso-${courseId}.csv`);
   }
 
   exportTopicPdf(topicId: string, topicName: string) {
     return this.download(`/api/export/topics/${topicId}/pdf`, `${topicName}.pdf`);
-  }
-
-  exportUnitProgresoPdf(unitId: string, studentId?: string) {
-    const suffix = studentId ? `?studentId=${studentId}` : '';
-    return this.download(`/api/export/units/${unitId}/progreso.pdf${suffix}`, `progreso-unidad-${unitId}.pdf`);
   }
 
   exportCourseProgresoPdf(courseId: string, studentId?: string) {

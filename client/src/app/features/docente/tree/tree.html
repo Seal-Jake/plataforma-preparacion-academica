@@ -1,12 +1,12 @@
 <h1 class="section-title"><app-icon name="book-open" [size]="22" /> Mis cursos</h1>
-<p class="muted">Elige una unidad para configurar su Examen y Proyecto de Unidad, ver a tus estudiantes y su rúbrica. Haz clic en un tema para subir su contenido y crear las preguntas de Participación en Clase y Práctica.</p>
+<p class="muted">Entra a un curso para crear su Examen Final o Investigación Final, ver a tus estudiantes y su rúbrica. Elige una unidad para crear su Examen o Investigación de Unidad. Haz clic en un tema para subir su contenido y crear Tareas de Participación Activa o Prácticas Calificadas.</p>
 
 @for (course of courses(); track course.id) {
   <section class="card course-block">
     <div class="course-header">
       <h2 class="section-title"><app-icon name="folder" [size]="18" /> {{ course.name }}</h2>
       <a [routerLink]="['/docente/courses', course.id]" class="link-with-icon">
-        <app-icon name="exam" [size]="14" /> Sesiones del curso
+        <app-icon name="exam" [size]="14" /> Tareas, estudiantes y rúbrica
       </a>
       <a [routerLink]="['/cursos', course.id, 'info']" class="link-with-icon">
         <app-icon name="info" [size]="14" /> Información del curso

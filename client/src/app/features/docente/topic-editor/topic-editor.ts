@@ -11,7 +11,13 @@ import { FileExplorer } from '../../../shared/components/file-explorer/file-expl
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { CalificarAbiertas } from '../../../shared/components/calificar-abiertas/calificar-abiertas';
-import { ayudaTipoSesionFijo, esSesionDeEvidencia, etiquetaCantidadPreguntas, etiquetaTipoSesionFijo } from '../../../core/utils/labels';
+import {
+  ayudaTipoSesionFijo,
+  esSesionDeEvidencia,
+  etiquetaCantidadPreguntas,
+  etiquetaTipoSesionFijo,
+  tiposTareaDeAmbito,
+} from '../../../core/utils/labels';
 import { AcademicSession, Entrega, Enrollment, ModoRespuesta, Question, QuestionOption, Topic } from '../../../core/models/models';
 
 @Component({
@@ -34,6 +40,8 @@ export class TopicEditor implements OnInit {
   esSesionDeEvidencia = esSesionDeEvidencia;
   etiquetaCantidadPreguntas = etiquetaCantidadPreguntas;
 
+  tiposDisponibles = tiposTareaDeAmbito('tema');
+
   topic = signal<Topic | null>(null);
 
   sesiones = signal<AcademicSession[]>([]);
@@ -42,6 +50,48 @@ export class TopicEditor implements OnInit {
     dueDate: [''],
     timeLimitMinutes: [null as number | null],
   });
+
+  showCreateForm = signal(false);
+  createForm = this.fb.group({
+    tipo: ['', Validators.required],
+    title: ['', Validators.required],
+    dueDate: [''],
+    timeLimitMinutes: [null as number | null],
+  });
+
+  tipoSeleccionadoEsExamen(): boolean {
+    const tipo = this.createForm.controls.tipo.value;
+    return this.tiposDisponibles.find((t) => t.tipo === tipo)?.modo === 'examen';
+  }
+
+  crearTarea() {
+    if (this.createForm.invalid) {
+      this.createForm.markAllAsTouched();
+      return;
+    }
+    const { tipo, title, dueDate, timeLimitMinutes } = this.createForm.getRawValue();
+    this.sessionsSvc
+      .create({
+        tipo: tipo as AcademicSession['tipoFijo'],
+        topicId: this.topicId,
+        title: title!,
+        dueDate: dueDate || null,
+        timeLimitMinutes: this.tipoSeleccionadoEsExamen() ? timeLimitMinutes : null,
+      })
+      .subscribe(() => {
+        this.createForm.reset({ tipo: '', title: '', dueDate: '', timeLimitMinutes: null });
+        this.showCreateForm.set(false);
+        this.reloadSesiones();
+      });
+  }
+
+  eliminarTarea(s: AcademicSession) {
+    if (!confirm(`¿Eliminar "${s.title}"? Se borrarán también todas las respuestas y entregas asociadas.`)) return;
+    this.sessionsSvc.delete(s.id).subscribe(() => {
+      if (this.editingSessionId() === s.id) this.editingSessionId.set(null);
+      this.reloadSesiones();
+    });
+  }
 
   // Preguntas propias de la sesión que se está configurando (Participación
   // en Clase o Práctica): se crean directamente aquí, sin un banco aparte.
@@ -86,7 +136,7 @@ export class TopicEditor implements OnInit {
     this.sessionsSvc.list({ topicId: this.topicId }).subscribe((s) => this.sesiones.set(s));
   }
 
-  // --- Sesiones fijas del tema (Participación en Clase, Práctica, Participación Activa) ---
+  // --- Tareas del tema (TPA, Práctica Calificada) ---
 
   startEditSession(s: AcademicSession) {
     this.editingSessionId.set(s.id);

@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { asyncHandler } from '../lib/asyncHandler';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { TIPOS_SESION_FIJOS_POR_ID } from '../lib/enums';
+import { TIPOS_TAREA_POR_ID } from '../lib/enums';
+import { calcularRubricaCurso } from '../rubric/rubric.data';
 
 export const dashboardRouter = Router();
 
@@ -16,6 +17,16 @@ dashboardRouter.get(
     const enrollments = await prisma.enrollment.findMany({ where: { studentId }, include: { course: true } });
     const courseIds = enrollments.map((e) => e.courseId);
     const courseById = new Map(enrollments.map((e) => [e.courseId, e.course]));
+
+    // Progreso de notas de cada curso inscrito, para mostrar en la pantalla
+    // principal sin que el alumno tenga que entrar curso por curso.
+    const rubricasPorCurso = await Promise.all(
+      enrollments.map(async (e) => ({
+        courseId: e.courseId,
+        courseName: courseById.get(e.courseId)?.name ?? '',
+        rubrica: await calcularRubricaCurso(e.courseId, studentId),
+      }))
+    );
 
     const units = await prisma.unit.findMany({ where: { courseId: { in: courseIds } } });
     const unitIds = units.map((u) => u.id);
@@ -43,7 +54,7 @@ dashboardRouter.get(
         return {
           sessionId: s.id,
           title: s.title,
-          categoriaNombre: TIPOS_SESION_FIJOS_POR_ID[s.tipoFijo]?.nombre ?? s.title,
+          categoriaNombre: TIPOS_TAREA_POR_ID[s.tipoFijo]?.nombre ?? s.title,
           unitId: unit?.id ?? null,
           unitName: unit?.name ?? null,
           courseName: course?.name ?? '',
@@ -67,6 +78,7 @@ dashboardRouter.get(
         completadas: marcas.length,
         porcentaje: folders.length > 0 ? Math.round((marcas.length / folders.length) * 100) : 0,
       },
+      rubricasPorCurso,
     });
   })
 );

@@ -3,18 +3,16 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CoursesService } from '../../../core/services/courses.service';
 import { SessionsService } from '../../../core/services/sessions.service';
-import { RubricService } from '../../../core/services/rubric.service';
 import { ExportService } from '../../../core/services/export.service';
-import { RubricChart } from '../../../shared/components/rubric-chart/rubric-chart';
 import { FileExplorer } from '../../../shared/components/file-explorer/file-explorer';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { etiquetaEstadoSesion } from '../../../core/utils/labels';
-import { AcademicSession, RubricaResultado, Unit } from '../../../core/models/models';
+import { AcademicSession, Unit } from '../../../core/models/models';
 
 @Component({
   selector: 'app-unit-view',
-  imports: [RouterLink, RubricChart, DatePipe, FileExplorer, Icon, EmptyState],
+  imports: [RouterLink, DatePipe, FileExplorer, Icon, EmptyState],
   templateUrl: './unit-view.html',
   styleUrl: './unit-view.css',
 })
@@ -23,15 +21,13 @@ export class UnitView implements OnInit {
   private router = inject(Router);
   private coursesSvc = inject(CoursesService);
   private sessionsSvc = inject(SessionsService);
-  private rubricSvc = inject(RubricService);
   private exportSvc = inject(ExportService);
 
   etiquetaEstadoSesion = etiquetaEstadoSesion;
 
   unit = signal<Unit | null>(null);
-  sessions = signal<AcademicSession[]>([]); // solo las 2 sesiones propias de la unidad
-  private topicSessions = signal<AcademicSession[]>([]); // sesiones de los temas de la unidad
-  rubrica = signal<RubricaResultado | null>(null);
+  sessions = signal<AcademicSession[]>([]); // tareas propias de la unidad (Examen/Investigación de Unidad)
+  private topicSessions = signal<AcademicSession[]>([]); // tareas de los temas de la unidad
   expandedTopicId = signal<string | null>(null);
 
   private unitId!: string;
@@ -43,7 +39,6 @@ export class UnitView implements OnInit {
       this.sessions.set(all.filter((s) => !s.topicId));
       this.topicSessions.set(all.filter((s) => !!s.topicId));
     });
-    this.rubricSvc.getUnidad(this.unitId).subscribe((r) => this.rubrica.set(r));
   }
 
   sesionesDeTema(topicId: string): AcademicSession[] {
@@ -64,9 +59,5 @@ export class UnitView implements OnInit {
 
   exportarTopicoPdf(topicId: string, topicName: string) {
     this.exportSvc.exportTopicPdf(topicId, topicName);
-  }
-
-  exportarProgreso() {
-    this.exportSvc.exportUnitProgresoPdf(this.unitId);
   }
 }

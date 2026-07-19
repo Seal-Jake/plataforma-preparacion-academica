@@ -1,4 +1,4 @@
-import { Nivel, Seccion, TipoPregunta, TipoSesionFijo } from '../models/models';
+import { AmbitoTarea, ModoTarea, Nivel, Seccion, TipoPregunta, TipoTarea } from '../models/models';
 
 // Traduce los valores internos (usados en la base de datos y la API) a
 // texto natural en español para mostrar en la interfaz. Los <select> siguen
@@ -25,29 +25,75 @@ const TIPO_PREGUNTA_LABELS: Record<TipoPregunta, string> = {
   proposicion_vf: 'Verdadero / Falso',
 };
 
-// La rúbrica es fija en toda la plataforma (ver TIPOS_SESION_FIJOS en el
-// backend, server/src/lib/enums.ts): estas 7 sesiones existen siempre,
-// automáticamente, en cada tema/unidad/curso. El docente ya no crea
-// categorías, solo las configura (preguntas, fecha límite, evidencia).
-const TIPO_SESION_FIJO_LABELS: Record<TipoSesionFijo, string> = {
-  participacion_clase: 'Participación en Clase',
-  practica: 'Práctica',
-  participacion_activa: 'Participación Activa',
-  examen_unidad: 'Examen de Unidad',
-  proyecto_unidad: 'Proyecto de Investigación de Unidad',
-  examen_final_curso: 'Examen Final del Curso',
-  proyecto_final_curso: 'Proyecto de Investigación Final',
-};
+// Los 6 tipos de tarea de la plataforma (ver TIPOS_TAREA en el backend,
+// server/src/lib/enums.ts). El docente los crea libremente, tantas veces
+// como quiera; la nota final del curso promedia todas las instancias de
+// cada tipo y pondera ese promedio con el peso fijo (ver rubric.data.ts).
+export interface TipoTareaDef {
+  tipo: TipoTarea;
+  nombre: string;
+  ayuda: string;
+  ambito: AmbitoTarea;
+  modo: ModoTarea;
+  peso: number;
+}
 
-const TIPO_SESION_FIJO_AYUDA: Record<TipoSesionFijo, string> = {
-  participacion_clase: 'Preguntas rápidas del banco de este tema (objetivo: 10 preguntas).',
-  practica: 'Ejercicios de práctica de este tema (objetivo: 5 preguntas).',
-  participacion_activa: 'El alumno sube evidencia de una actividad en clase. Al activarla, la fecha límite se fija automáticamente 120 horas después.',
-  examen_unidad: 'Examen con preguntas de cualquier tema de esta unidad (objetivo: 20 preguntas). Actívalo cuando quieras que los alumnos puedan rendirlo.',
-  proyecto_unidad: 'El alumno entrega un proyecto de investigación de la unidad; tú lo calificas manualmente.',
-  examen_final_curso: 'Examen final con preguntas de cualquier tema del curso (objetivo: 20 preguntas).',
-  proyecto_final_curso: 'El alumno entrega el proyecto de investigación final del curso; tú lo calificas manualmente.',
-};
+export const TIPOS_TAREA: TipoTareaDef[] = [
+  {
+    tipo: 'tpa',
+    nombre: 'Tarea de Participación Activa',
+    ayuda: 'El alumno sube evidencia de una actividad en clase. Al activarla, la fecha límite se fija automáticamente 120 horas después.',
+    ambito: 'tema',
+    modo: 'entrega',
+    peso: 15,
+  },
+  {
+    tipo: 'practica_calificada',
+    nombre: 'Práctica Calificada',
+    ayuda: 'Preguntas del banco de este tema que el alumno responde y se autocalifican.',
+    ambito: 'tema',
+    modo: 'examen',
+    peso: 15,
+  },
+  {
+    tipo: 'examen_unidad',
+    nombre: 'Examen de Unidad',
+    ayuda: 'Examen con preguntas de cualquier tema de esta unidad. Actívalo cuando quieras que los alumnos puedan rendirlo.',
+    ambito: 'unidad',
+    modo: 'examen',
+    peso: 15,
+  },
+  {
+    tipo: 'examen_final',
+    nombre: 'Examen Final',
+    ayuda: 'Examen final con preguntas de cualquier tema del curso.',
+    ambito: 'curso',
+    modo: 'examen',
+    peso: 20,
+  },
+  {
+    tipo: 'investigacion_unidad',
+    nombre: 'Investigación de Unidad',
+    ayuda: 'El alumno entrega una investigación de la unidad; tú la calificas manualmente.',
+    ambito: 'unidad',
+    modo: 'entrega',
+    peso: 15,
+  },
+  {
+    tipo: 'investigacion_final',
+    nombre: 'Investigación Final',
+    ayuda: 'El alumno entrega la investigación final del curso; tú la calificas manualmente.',
+    ambito: 'curso',
+    modo: 'entrega',
+    peso: 20,
+  },
+];
+
+const TIPOS_TAREA_POR_ID: Record<string, TipoTareaDef> = Object.fromEntries(TIPOS_TAREA.map((t) => [t.tipo, t]));
+
+export function tiposTareaDeAmbito(ambito: AmbitoTarea): TipoTareaDef[] {
+  return TIPOS_TAREA.filter((t) => t.ambito === ambito);
+}
 
 export function etiquetaNivel(v: string): string {
   return NIVEL_LABELS[v as Nivel] ?? v;
@@ -62,15 +108,15 @@ export function etiquetaTipoPregunta(v: string): string {
 }
 
 export function etiquetaTipoSesionFijo(v: string): string {
-  return TIPO_SESION_FIJO_LABELS[v as TipoSesionFijo] ?? v;
+  return TIPOS_TAREA_POR_ID[v]?.nombre ?? v;
 }
 
 export function ayudaTipoSesionFijo(v: string): string {
-  return TIPO_SESION_FIJO_AYUDA[v as TipoSesionFijo] ?? '';
+  return TIPOS_TAREA_POR_ID[v]?.ayuda ?? '';
 }
 
 export function esSesionDeEvidencia(v: string): boolean {
-  return v === 'participacion_activa' || v === 'proyecto_unidad' || v === 'proyecto_final_curso';
+  return TIPOS_TAREA_POR_ID[v]?.modo === 'entrega';
 }
 
 export function etiquetaCantidadPreguntas(n: number): string {

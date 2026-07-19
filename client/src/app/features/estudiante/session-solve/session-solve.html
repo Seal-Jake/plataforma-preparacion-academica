@@ -132,7 +132,7 @@
       <div class="card evidencia-card">
         <h3 class="section-title">
           <app-icon name="upload" [size]="16" />
-          {{ d.preguntas.length === 0 ? 'Entrega' : 'Evidencia de resolución (' + session()!.pesoEvidencia + '% de la nota)' }}
+          Entrega
         </h3>
         <p class="muted">Sube un archivo con el desarrollo completo de tus ejercicios, o descríbelo en texto.</p>
         <textarea [(ngModel)]="entregaTexto" rows="4" placeholder="Descripción o resolución en texto (opcional)"></textarea>

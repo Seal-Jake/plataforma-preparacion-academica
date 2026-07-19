@@ -2,33 +2,29 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { CURRICULUM } from './curriculum';
 import { crearCarpetasFijas } from '../src/lib/carpetasFijas';
-import { crearSesionesFijasCurso, crearSesionesFijasUnidad, crearSesionesFijasTema } from '../src/lib/sesionesFijas';
 
 const prisma = new PrismaClient();
 
 // Cursos, unidades, temas y su contenido base: las 4 carpetas fijas por
-// tema, y las sesiones fijas de la rúbrica (ver TIPOS_SESION_FIJOS) en los
-// 3 niveles (tema, unidad, curso). El banco de preguntas y el contenido de
-// las carpetas los llena el docente desde la plataforma.
+// tema. Las tareas (TPA, Práctica Calificada, Examen de Unidad, etc.) ya no
+// se crean automáticamente — el docente las crea libremente, tantas como
+// quiera, desde la plataforma (ver TIPOS_TAREA).
 async function seedCurriculo() {
   for (const [courseIdx, curso] of CURRICULUM.entries()) {
     const course = await prisma.course.create({
       data: { name: curso.name, orderIndex: courseIdx },
     });
-    await crearSesionesFijasCurso(course.id);
 
     for (const [unitIdx, unidad] of curso.units.entries()) {
       const unit = await prisma.unit.create({
         data: { courseId: course.id, name: unidad.name, orderIndex: unitIdx },
       });
-      await crearSesionesFijasUnidad(unit.id);
 
       for (const [topicIdx, topicName] of unidad.topics.entries()) {
         const topic = await prisma.topic.create({
           data: { unitId: unit.id, name: topicName, orderIndex: topicIdx },
         });
         await crearCarpetasFijas(topic.id);
-        await crearSesionesFijasTema(topic.id, unit.id);
       }
     }
   }

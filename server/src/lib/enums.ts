@@ -16,59 +16,57 @@ export const TIPOS_PREGUNTA = [
 ] as const;
 export type TipoPregunta = (typeof TIPOS_PREGUNTA)[number];
 
-// Rúbrica fija de la plataforma (ya no configurable por el docente).
-// Cada tema/unidad/curso recibe automáticamente las sesiones fijas que le
-// corresponden a su nivel, y la nota final se calcula con los pesos de
-// PESOS_UNIDAD / PESOS_CURSO más abajo.
-export type NivelSesionFijo = 'tema' | 'unidad' | 'curso';
-export type ModoSesionFijo = 'examen' | 'evidencia';
+// Tipos de tarea de la plataforma. A diferencia del modelo anterior (una
+// sesión fija por tema/unidad/curso, creada automáticamente), el docente
+// ahora crea libremente tantas tareas de cada tipo como quiera, en el
+// ámbito que le corresponde a ese tipo. La nota final del curso promedia
+// TODAS las instancias de cada tipo (sin importar en qué tema/unidad estén)
+// y pondera ese promedio con el peso fijo del tipo — ver calcularRubricaCurso.
+export type AmbitoTarea = 'tema' | 'unidad' | 'curso';
+// 'examen': el alumno responde preguntas, se autocalifica al instante.
+// 'entrega': el alumno escribe texto y/o sube un archivo; el docente califica
+// manualmente. En ambos casos el docente puede sobreescribir la nota a mano
+// en cualquier momento, haya o no haya algo entregado.
+export type ModoTarea = 'examen' | 'entrega';
 
-export interface TipoSesionFijoDef {
-  tipoFijo: string;
+export interface TipoTareaDef {
+  tipo: string;
   nombre: string;
-  nivel: NivelSesionFijo;
-  modo: ModoSesionFijo;
-  preguntasObjetivo?: number;
-  duracionHoras?: number;
+  ambito: AmbitoTarea;
+  modo: ModoTarea;
+  peso: number; // % en la nota final del curso — TIPOS_TAREA suma exactamente 100.
+  duracionHoras?: number; // si se define, al abrir la tarea se fija la fecha límite automáticamente a esta duración desde ese momento (si no tenía una ya puesta).
 }
 
-export const TIPOS_SESION_FIJOS: TipoSesionFijoDef[] = [
-  { tipoFijo: 'participacion_clase', nombre: 'Participación en Clase', nivel: 'tema', modo: 'examen', preguntasObjetivo: 10 },
-  { tipoFijo: 'practica', nombre: 'Práctica', nivel: 'tema', modo: 'examen', preguntasObjetivo: 5 },
-  { tipoFijo: 'participacion_activa', nombre: 'Participación Activa', nivel: 'tema', modo: 'evidencia', duracionHoras: 120 },
-  { tipoFijo: 'examen_unidad', nombre: 'Examen de Unidad', nivel: 'unidad', modo: 'examen', preguntasObjetivo: 20 },
-  { tipoFijo: 'proyecto_unidad', nombre: 'Proyecto de Investigación de Unidad', nivel: 'unidad', modo: 'evidencia' },
-  { tipoFijo: 'examen_final_curso', nombre: 'Examen Final del Curso', nivel: 'curso', modo: 'examen', preguntasObjetivo: 20 },
-  { tipoFijo: 'proyecto_final_curso', nombre: 'Proyecto de Investigación Final', nivel: 'curso', modo: 'evidencia' },
+export const TIPOS_TAREA: TipoTareaDef[] = [
+  { tipo: 'tpa', nombre: 'Tarea de Participación Activa', ambito: 'tema', modo: 'entrega', peso: 15, duracionHoras: 120 },
+  { tipo: 'practica_calificada', nombre: 'Práctica Calificada', ambito: 'tema', modo: 'examen', peso: 15 },
+  { tipo: 'examen_unidad', nombre: 'Examen de Unidad', ambito: 'unidad', modo: 'examen', peso: 15 },
+  { tipo: 'examen_final', nombre: 'Examen Final', ambito: 'curso', modo: 'examen', peso: 20 },
+  { tipo: 'investigacion_unidad', nombre: 'Investigación de Unidad', ambito: 'unidad', modo: 'entrega', peso: 15 },
+  { tipo: 'investigacion_final', nombre: 'Investigación Final', ambito: 'curso', modo: 'entrega', peso: 20 },
 ];
 
-export const TIPOS_SESION_FIJOS_POR_ID: Record<string, TipoSesionFijoDef> = Object.fromEntries(
-  TIPOS_SESION_FIJOS.map((t) => [t.tipoFijo, t])
+export const TIPOS_TAREA_POR_ID: Record<string, TipoTareaDef> = Object.fromEntries(
+  TIPOS_TAREA.map((t) => [t.tipo, t])
 );
 
-export const TIPO_SESION_FIJO_IDS = TIPOS_SESION_FIJOS.map((t) => t.tipoFijo) as [string, ...string[]];
+export const TIPO_TAREA_IDS = TIPOS_TAREA.map((t) => t.tipo) as [string, ...string[]];
 
-// Peso (%) de cada componente en la nota final de una UNIDAD.
-export const PESOS_UNIDAD: Record<string, number> = {
-  examen_unidad: 20,
-  proyecto_unidad: 20,
-  practica: 20,
-  participacion_clase: 20,
-  participacion_activa: 20,
-};
-
-// Peso (%) de cada componente en la nota final del CURSO.
-// Nota: practica/participacion_clase/participacion_activa se promedian sobre
-// TODOS los temas del curso; proyecto_unidad/examen_unidad se promedian
-// sobre todas las unidades del curso.
-export const PESOS_CURSO: Record<string, number> = {
-  examen_final_curso: 20,
-  proyecto_final_curso: 20,
-  practica: 10,
-  proyecto_unidad: 15,
-  examen_unidad: 15,
-  participacion_clase: 10,
-  participacion_activa: 10,
+// Migración desde el modelo anterior (sesiones fijas): cada tipo viejo se
+// reasigna a su equivalente nuevo más cercano, sin perder ningún dato ya
+// calificado. "participacion_clase" y "practica" se fusionan en
+// "practica_calificada" (ambas eran tareas rápidas de tema con preguntas):
+// si un tema ya tenía las dos, simplemente pasa a tener dos tareas de tipo
+// "Práctica Calificada" en vez de una de cada — el nuevo modelo lo permite.
+export const MIGRACION_TIPOS_TAREA: Record<string, string> = {
+  participacion_clase: 'practica_calificada',
+  practica: 'practica_calificada',
+  participacion_activa: 'tpa',
+  proyecto_unidad: 'investigacion_unidad',
+  examen_unidad: 'examen_unidad',
+  proyecto_final_curso: 'investigacion_final',
+  examen_final_curso: 'examen_final',
 };
 
 export interface CarpetaFija {

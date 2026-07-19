@@ -6,10 +6,11 @@ import { PreferencesService } from '../../../core/services/preferences.service';
 import { DashboardResponse } from '../../../core/models/models';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { RubricChart } from '../../../shared/components/rubric-chart/rubric-chart';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, DatePipe, Icon, EmptyState],
+  imports: [RouterLink, DatePipe, Icon, EmptyState, RubricChart],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })

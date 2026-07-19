@@ -7,7 +7,6 @@ import { requireAuth, requireRole } from '../middleware/auth';
 import { notFound, forbidden } from '../lib/errors';
 import { LIMITE_TEXTO_CORTO } from '../lib/textLimits';
 import { crearCarpetasFijas } from '../lib/carpetasFijas';
-import { crearSesionesFijasTema } from '../lib/sesionesFijas';
 
 export const topicsRouter = Router();
 
@@ -58,7 +57,6 @@ topicsRouter.post(
   asyncHandler(async (req, res) => {
     const topic = await prisma.topic.create({ data: req.body });
     await crearCarpetasFijas(topic.id);
-    await crearSesionesFijasTema(topic.id, topic.unitId);
     res.status(201).json(topic);
   })
 );

@@ -6,18 +6,56 @@
   }
 
   <section class="card">
-    <h2 class="section-title"><app-icon name="exam" [size]="18" /> Sesiones fijas del tema</h2>
+    <div class="section-header">
+      <h2 class="section-title"><app-icon name="exam" [size]="18" /> Tareas del tema</h2>
+      <button class="secondary small" (click)="showCreateForm.set(!showCreateForm())">
+        <app-icon name="plus" [size]="13" /> {{ showCreateForm() ? 'Cancelar' : 'Crear tarea' }}
+      </button>
+    </div>
     <p class="muted">
-      Todo tema tiene siempre estas 3 sesiones fijas. En Participación en Clase y Práctica creas las preguntas
-      directamente aquí (no hay un banco aparte). En Participación Activa, activas la sesión para que los alumnos
-      entreguen su evidencia.
+      Crea tantas Tareas de Participación Activa o Prácticas Calificadas como quieras en este tema. En las Prácticas
+      Calificadas creas las preguntas directamente aquí (no hay un banco aparte); en la TPA, activas la sesión para
+      que los alumnos entreguen su evidencia.
     </p>
+
+    @if (showCreateForm()) {
+      <form class="card session-form" [formGroup]="createForm" (ngSubmit)="crearTarea()">
+        <div class="grid-2">
+          <div class="form-field">
+            <label>Tipo de tarea</label>
+            <select formControlName="tipo">
+              <option value="">Selecciona...</option>
+              @for (t of tiposDisponibles; track t.tipo) {
+                <option [value]="t.tipo">{{ t.nombre }} ({{ t.peso }}%)</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Título</label>
+            <input formControlName="title" placeholder="Ej. Práctica Calificada 1" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-field">
+            <label>Fecha límite (opcional)</label>
+            <input type="datetime-local" formControlName="dueDate" />
+          </div>
+          @if (tipoSeleccionadoEsExamen()) {
+            <div class="form-field">
+              <label>Tiempo límite (minutos, opcional)</label>
+              <input type="number" formControlName="timeLimitMinutes" min="1" />
+            </div>
+          }
+        </div>
+        <button type="submit"><app-icon name="check-circle" [size]="14" /> Crear tarea</button>
+      </form>
+    }
 
     @if (sesiones().length > 0) {
       <table>
         <thead>
           <tr>
-            <th>Sesión</th>
+            <th>Tarea</th>
             <th>Preguntas / Evidencia</th>
             <th>Fecha límite</th>
             <th>Abierto</th>
@@ -28,8 +66,8 @@
           @for (s of sesiones(); track s.id) {
             <tr>
               <td>
-                {{ etiquetaTipoSesionFijo(s.tipoFijo) }}
-                <p class="field-hint"><app-icon name="info" [size]="12" /> {{ ayudaTipoSesionFijo(s.tipoFijo) }}</p>
+                {{ s.title }}
+                <p class="field-hint"><app-icon name="info" [size]="12" /> {{ etiquetaTipoSesionFijo(s.tipoFijo) }} — {{ ayudaTipoSesionFijo(s.tipoFijo) }}</p>
               </td>
               <td>{{ esSesionDeEvidencia(s.tipoFijo) ? 'Entrega manual' : etiquetaCantidadPreguntas(s.questionIds.length) }}</td>
               <td>{{ s.dueDate ? (s.dueDate | date: 'short') : '—' }}</td>
@@ -44,11 +82,20 @@
                 @if (esSesionDeEvidencia(s.tipoFijo)) {
                   <button class="secondary small" (click)="verEntregas(s)"><app-icon name="file-text" [size]="13" /> Ver entregas</button>
                 }
+                <button class="danger small" (click)="eliminarTarea(s)"><app-icon name="trash" [size]="13" /> Eliminar</button>
               </td>
             </tr>
           }
         </tbody>
       </table>
+    } @else {
+      <app-empty-state
+        icon="exam"
+        title="Todavía no hay tareas en este tema"
+        description="Crea la primera Tarea de Participación Activa o Práctica Calificada."
+        actionLabel="Crear tarea"
+        (action)="showCreateForm.set(true)"
+      />
     }
 
     @if (editingSessionId(); as sid) {
@@ -61,7 +108,7 @@
                 <div class="form-field">
                   <label>Fecha límite (opcional)</label>
                   <input type="datetime-local" formControlName="dueDate" />
-                  @if (s.tipoFijo === 'participacion_activa') {
+                  @if (s.tipoFijo === 'tpa') {
                     <p class="field-hint"><app-icon name="info" [size]="13" /> Si la dejas vacía, se fija automáticamente a 120 horas desde que la abras.</p>
                   }
                 </div>

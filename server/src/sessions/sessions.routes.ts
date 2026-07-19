@@ -8,13 +8,14 @@ import {
   answerSchema,
   answerAbiertaSchema,
   calificarAttemptSchema,
+  crearTareaSchema,
   reabrirSesionSchema,
   sessionUpdateSchema,
   toggleAperturaSchema,
 } from './sessions.schemas';
 import { seededShuffle, shuffledOptionOrder } from './shuffle';
 import { assertEnrolledForSession } from '../lib/sessionScope';
-import { TIPOS_SESION_FIJOS_POR_ID } from '../lib/enums';
+import { TIPOS_TAREA_POR_ID } from '../lib/enums';
 import { uploadDocument } from '../lib/upload';
 
 export const sessionsRouter = Router();
@@ -44,12 +45,14 @@ sessionsRouter.get(
     if (topicId) {
       where = { topicId };
     } else if (unitId) {
-      // Por defecto trae TODAS las sesiones de la unidad (las 2 propias de
+      // Por defecto trae TODAS las tareas de la unidad (las propias de
       // unidad + las de sus temas), para la vista del alumno. soloDirectas=1
-      // limita a solo las 2 sesiones propias de la unidad (usado por la
-      // pantalla del docente para configurar Examen/Proyecto de Unidad).
+      // limita a solo las tareas propias de la unidad (Examen/Investigación
+      // de Unidad) — usado por la pantalla del docente para gestionarlas.
       where = soloDirectas === '1' ? { unitId, topicId: null } : { unitId };
     } else if (courseId) {
+      // courseId solo se guarda en tareas propias del curso (Examen
+      // Final/Investigación Final): ya filtra sin necesitar soloDirectas.
       where = { courseId };
     } else {
       throw badRequest('Debes indicar courseId, unitId o topicId.');
@@ -99,6 +102,62 @@ sessionsRouter.get(
   })
 );
 
+// El docente crea una tarea nueva del tipo que quiera, tantas veces como
+// quiera: la cantidad y el ritmo de creación los decide él. El ámbito
+// (courseId/unitId/topicId) debe corresponder exactamente al nivel fijo de
+// ese tipo (ver TIPOS_TAREA_POR_ID) para que la rúbrica del curso sepa
+// siempre dónde buscar cada categoría.
+sessionsRouter.post(
+  '/',
+  requireAuth,
+  requireRole('docente'),
+  validate(crearTareaSchema),
+  asyncHandler(async (req, res) => {
+    const { tipo, courseId, unitId, topicId, title, dueDate, timeLimitMinutes } = req.body as {
+      tipo: string;
+      courseId?: string;
+      unitId?: string;
+      topicId?: string;
+      title: string;
+      dueDate?: Date | null;
+      timeLimitMinutes?: number | null;
+    };
+    const def = TIPOS_TAREA_POR_ID[tipo];
+    if (!def) throw badRequest('Tipo de tarea desconocido.');
+
+    let scopeData: { topicId: string | null; unitId: string | null; courseId: string | null };
+    if (def.ambito === 'tema') {
+      if (!topicId) throw badRequest(`${def.nombre} se crea dentro de un tema.`);
+      const topic = await prisma.topic.findUnique({ where: { id: topicId } });
+      if (!topic) throw notFound('Tema');
+      scopeData = { topicId: topic.id, unitId: topic.unitId, courseId: null };
+    } else if (def.ambito === 'unidad') {
+      if (!unitId) throw badRequest(`${def.nombre} se crea dentro de una unidad.`);
+      const unit = await prisma.unit.findUnique({ where: { id: unitId } });
+      if (!unit) throw notFound('Unidad');
+      scopeData = { topicId: null, unitId: unit.id, courseId: null };
+    } else {
+      if (!courseId) throw badRequest(`${def.nombre} se crea dentro de un curso.`);
+      const course = await prisma.course.findUnique({ where: { id: courseId } });
+      if (!course) throw notFound('Curso');
+      scopeData = { topicId: null, unitId: null, courseId: course.id };
+    }
+
+    const session = await prisma.academicSession.create({
+      data: {
+        ...scopeData,
+        tipoFijo: tipo,
+        title,
+        questionIds: '[]',
+        requiereEvidencia: def.modo === 'entrega',
+        dueDate: dueDate ?? null,
+        timeLimitMinutes: def.modo === 'examen' ? (timeLimitMinutes ?? null) : null,
+      },
+    });
+    res.status(201).json({ ...session, questionIds: JSON.parse(session.questionIds) });
+  })
+);
+
 sessionsRouter.put(
   '/:id',
   requireAuth,
@@ -110,6 +169,21 @@ sessionsRouter.put(
     if (questionIds) data.questionIds = JSON.stringify(questionIds);
     const session = await prisma.academicSession.update({ where: { id: req.params.id }, data });
     res.json({ ...session, questionIds: JSON.parse(session.questionIds) });
+  })
+);
+
+// El docente elimina una tarea que creó (por error, o porque ya no la
+// quiere). Se borra en cascada todo lo asociado (intentos, entregas,
+// estados) — Prisma ya tiene onDelete: Cascade en esas relaciones.
+sessionsRouter.delete(
+  '/:id',
+  requireAuth,
+  requireRole('docente'),
+  asyncHandler(async (req, res) => {
+    const session = await prisma.academicSession.findUnique({ where: { id: req.params.id } });
+    if (!session) throw notFound('Sesión');
+    await prisma.academicSession.delete({ where: { id: req.params.id } });
+    res.status(204).send();
   })
 );
 
@@ -127,7 +201,7 @@ sessionsRouter.patch(
     if (!existing) throw notFound('Sesión');
 
     const data: Record<string, unknown> = { abiertoParaTodos: req.body.abiertoParaTodos };
-    const tipo = TIPOS_SESION_FIJOS_POR_ID[existing.tipoFijo];
+    const tipo = TIPOS_TAREA_POR_ID[existing.tipoFijo];
     if (req.body.abiertoParaTodos && tipo?.duracionHoras && !existing.dueDate) {
       data.dueDate = new Date(Date.now() + tipo.duracionHoras * 60 * 60 * 1000);
     }

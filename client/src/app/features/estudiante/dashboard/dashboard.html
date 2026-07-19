@@ -14,6 +14,23 @@
   </section>
 
   <section class="card">
+    <h2 class="section-title"><app-icon name="chart" [size]="18" /> Progreso de notas</h2>
+    @if (d.rubricasPorCurso.length > 0) {
+      @for (rc of d.rubricasPorCurso; track rc.courseId) {
+        <div class="curso-rubrica">
+          <div class="curso-rubrica-header">
+            <h3>{{ rc.courseName }}</h3>
+            <span class="badge">Nota final: {{ rc.rubrica.notaFinal ?? '—' }}</span>
+          </div>
+          <app-rubric-chart [rubrica]="rc.rubrica" />
+        </div>
+      }
+    } @else {
+      <app-empty-state icon="chart" title="Sin cursos inscritos" description="Todavía no estás inscrito en ningún curso." />
+    }
+  </section>
+
+  <section class="card">
     <h2 class="section-title"><app-icon name="clock" [size]="18" /> Pendientes con fecha límite</h2>
     @if (prefs.prefs().alumnoSoloVencidas) {
       <p class="muted"><app-icon name="alert-triangle" [size]="13" /> Mostrando solo las vencidas (cámbialo en Perfil &gt; Personalización).</p>
