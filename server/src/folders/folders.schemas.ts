@@ -12,6 +12,8 @@ export const renameFolderSchema = z.object({
 });
 
 export const createFileSchema = z.object({
-  nombre: z.string().trim().min(1).max(LIMITE_TEXTO_CORTO),
+  // Requerido solo cuando no se adjunta ningún archivo (nota de texto pura):
+  // con uno o más archivos, el nombre se toma del archivo si no se indica.
+  nombre: z.string().trim().max(LIMITE_TEXTO_CORTO).optional(),
   contenidoTexto: z.string().trim().max(LIMITE_TEORIA).optional(),
 });

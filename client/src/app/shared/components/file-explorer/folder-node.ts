@@ -27,7 +27,7 @@ export class FolderNodeComponent {
   nuevoNombreSubcarpeta = '';
   nuevoArchivoNombre = '';
   nuevoArchivoTexto = '';
-  archivoSeleccionado: File | null = null;
+  archivosSeleccionados: File[] = [];
   renombrando = signal(false);
   nombreEditado = '';
 
@@ -37,7 +37,7 @@ export class FolderNodeComponent {
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
-    this.archivoSeleccionado = input.files?.[0] ?? null;
+    this.archivosSeleccionados = Array.from(input.files ?? []);
   }
 
   crearSubcarpeta() {
@@ -50,13 +50,14 @@ export class FolderNodeComponent {
   }
 
   guardarArchivo() {
-    if (!this.nuevoArchivoNombre.trim()) return;
+    const nombre = this.nuevoArchivoNombre.trim();
+    if (this.archivosSeleccionados.length === 0 && !nombre) return;
     this.foldersSvc
-      .uploadFile(this.folder.id, this.nuevoArchivoNombre.trim(), this.nuevoArchivoTexto.trim() || null, this.archivoSeleccionado)
+      .uploadFile(this.folder.id, nombre || null, this.nuevoArchivoTexto.trim() || null, this.archivosSeleccionados)
       .subscribe(() => {
         this.nuevoArchivoNombre = '';
         this.nuevoArchivoTexto = '';
-        this.archivoSeleccionado = null;
+        this.archivosSeleccionados = [];
         this.showUploadForm.set(false);
         this.changed.emit();
       });

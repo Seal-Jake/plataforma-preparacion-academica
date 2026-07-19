@@ -1,5 +1,7 @@
 import multer, { FileFilterCallback } from 'multer';
 import type { Request } from 'express';
+import path from 'path';
+import { badRequest } from './errors';
 
 const ALLOWED_DOCUMENT_MIME_TYPES = new Set([
   'application/pdf',
@@ -15,24 +17,47 @@ const ALLOWED_DOCUMENT_MIME_TYPES = new Set([
   'text/plain',
 ]);
 
+// Algunos navegadores/sistemas operativos no reportan un mimetype confiable
+// para ciertos archivos (sobre todo PDFs escaneados o exportados desde apps
+// de escaneo, que a veces llegan como "application/octet-stream" o vacío).
+// En ese caso se acepta el archivo según su extensión en vez de rechazarlo.
+const ALLOWED_DOCUMENT_EXTENSIONS = new Set([
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.ppt',
+  '.pptx',
+  '.xls',
+  '.xlsx',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.txt',
+]);
+
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
 function documentFileFilter(_req: Request, file: Express.Multer.File, cb: FileFilterCallback) {
   if (ALLOWED_DOCUMENT_MIME_TYPES.has(file.mimetype)) return cb(null, true);
-  cb(new Error('Tipo de archivo no permitido.'));
+  const mimetypeNoConfiable = !file.mimetype || file.mimetype === 'application/octet-stream';
+  const extension = path.extname(file.originalname).toLowerCase();
+  if (mimetypeNoConfiable && ALLOWED_DOCUMENT_EXTENSIONS.has(extension)) return cb(null, true);
+  cb(badRequest(`Tipo de archivo no permitido: "${file.originalname}".`));
 }
 
 function imageFileFilter(_req: Request, file: Express.Multer.File, cb: FileFilterCallback) {
   if (ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) return cb(null, true);
-  cb(new Error('Solo se permiten imágenes (png, jpg, webp).'));
+  cb(badRequest('Solo se permiten imágenes (png, jpg, webp).'));
 }
 
 // Los archivos se guardan como bytes en la base de datos (no en disco), para que
 // sobrevivan a reinicios/redeploys en hosting sin almacenamiento persistente.
 // Material de clase, evidencia de examen, participación activa, entregas de texto/archivo.
+// 50MB (antes 20MB): los PDFs escaneados de varias páginas suelen pesar más de 20MB.
 export const uploadDocument = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: documentFileFilter,
 });
 

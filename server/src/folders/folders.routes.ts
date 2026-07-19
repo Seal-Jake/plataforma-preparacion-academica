@@ -199,34 +199,71 @@ foldersRouter.post(
   })
 );
 
-// Sube un archivo y/o crea una nota de texto dentro de una carpeta.
+// Sube uno o más archivos y/o crea una nota de texto dentro de una carpeta.
+// Con un solo archivo (o ninguno), "nombre" es el nombre del elemento tal
+// como lo escribió el docente; con varios archivos a la vez, cada uno se
+// nombra con su nombre de archivo original (el campo "nombre" del form no
+// tiene un único elemento al que aplicarle un nombre común).
 foldersRouter.post(
   '/:id/archivos',
   requireAuth,
   requireRole('docente'),
-  uploadDocument.single('archivo'),
+  uploadDocument.array('archivo', 10),
   validate(createFileSchema),
   asyncHandler(async (req, res) => {
     const folder = await prisma.folder.findUnique({ where: { id: req.params.id } });
     if (!folder) throw notFound('Carpeta');
 
-    const file = req.file;
-    const { nombre, contenidoTexto } = req.body as { nombre: string; contenidoTexto?: string };
-    if (!file && !contenidoTexto) throw badRequest('Debes adjuntar un archivo o escribir contenido de texto.');
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const { nombre, contenidoTexto } = req.body as { nombre?: string; contenidoTexto?: string };
+    if (files.length === 0 && !contenidoTexto) throw badRequest('Debes adjuntar uno o más archivos, o escribir contenido de texto.');
+    if (files.length === 0 && !nombre) throw badRequest('Escribe un nombre para la nota.');
 
-    const created = await prisma.fileItem.create({
-      data: {
-        folderId: folder.id,
-        nombre,
-        contenidoTexto: contenidoTexto || null,
-        data: file?.buffer ?? null,
-        mimeType: file?.mimetype ?? null,
-        sizeBytes: file?.size ?? null,
-        subidoPor: req.user!.sub,
-      },
-      select: { id: true, folderId: true, nombre: true, contenidoTexto: true, mimeType: true, sizeBytes: true, subidoPor: true, createdAt: true },
-    });
-    res.status(201).json(created);
+    const selectFields = {
+      id: true,
+      folderId: true,
+      nombre: true,
+      contenidoTexto: true,
+      mimeType: true,
+      sizeBytes: true,
+      subidoPor: true,
+      createdAt: true,
+    } as const;
+
+    const creados =
+      files.length > 0
+        ? await Promise.all(
+            files.map((file) =>
+              prisma.fileItem.create({
+                data: {
+                  folderId: folder.id,
+                  nombre: files.length === 1 && nombre ? nombre : file.originalname,
+                  contenidoTexto: files.length === 1 ? contenidoTexto || null : null,
+                  data: file.buffer,
+                  mimeType: file.mimetype,
+                  sizeBytes: file.size,
+                  subidoPor: req.user!.sub,
+                },
+                select: selectFields,
+              })
+            )
+          )
+        : [
+            await prisma.fileItem.create({
+              data: {
+                folderId: folder.id,
+                nombre: nombre!,
+                contenidoTexto: contenidoTexto || null,
+                data: null,
+                mimeType: null,
+                sizeBytes: null,
+                subidoPor: req.user!.sub,
+              },
+              select: selectFields,
+            }),
+          ];
+
+    res.status(201).json(creados);
   })
 );
 

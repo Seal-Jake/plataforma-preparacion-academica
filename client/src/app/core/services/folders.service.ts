@@ -30,11 +30,11 @@ export class FoldersService {
     return this.http.post<{ ok: boolean }>(`/api/folders/topic/${topicId}/vaciar`, {});
   }
 
-  uploadFile(folderId: string, nombre: string, contenidoTexto: string | null, archivo: File | null) {
+  uploadFile(folderId: string, nombre: string | null, contenidoTexto: string | null, archivos: File[]) {
     const form = new FormData();
-    form.append('nombre', nombre);
+    if (nombre) form.append('nombre', nombre);
     if (contenidoTexto) form.append('contenidoTexto', contenidoTexto);
-    if (archivo) form.append('archivo', archivo);
+    for (const archivo of archivos) form.append('archivo', archivo);
     return this.http.post(`/api/folders/${folderId}/archivos`, form);
   }
 

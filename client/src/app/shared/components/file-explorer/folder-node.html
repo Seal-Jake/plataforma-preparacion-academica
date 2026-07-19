@@ -47,13 +47,20 @@
 
     @if (showUploadForm()) {
       <div class="inline-form column">
-        <input [(ngModel)]="nuevoArchivoNombre" placeholder="Nombre del elemento" />
-        <textarea [(ngModel)]="nuevoArchivoTexto" placeholder="Nota de texto (opcional si adjuntas un archivo)" rows="2"></textarea>
+        <input
+          [(ngModel)]="nuevoArchivoNombre"
+          [placeholder]="archivosSeleccionados.length > 1 ? 'Nombre (opcional: se usa el de cada archivo)' : 'Nombre del elemento'"
+        />
+        <textarea [(ngModel)]="nuevoArchivoTexto" placeholder="Nota de texto (opcional si adjuntas archivos)" rows="2"></textarea>
         <input
           type="file"
+          multiple
           accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,image/png,image/jpeg,image/webp"
           (change)="onFileSelected($event)"
         />
+        @if (archivosSeleccionados.length > 1) {
+          <p class="field-hint">{{ archivosSeleccionados.length }} archivos seleccionados: cada uno se guardará con su nombre original.</p>
+        }
         <button class="small" (click)="guardarArchivo()">Guardar</button>
       </div>
     }
