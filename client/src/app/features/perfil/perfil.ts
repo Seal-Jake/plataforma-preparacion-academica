@@ -1,20 +1,22 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ProfileService } from '../../core/services/profile.service';
 import { AuthService } from '../../core/services/auth.service';
+import { Acento, Densidad, PreferencesService, TamanoTexto } from '../../core/services/preferences.service';
 import { ThemePreference } from '../../core/models/models';
 import { Icon } from '../../shared/components/icon/icon';
 
 @Component({
   selector: 'app-perfil',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [ReactiveFormsModule, FormsModule, Icon],
   templateUrl: './perfil.html',
   styleUrl: './perfil.css',
 })
 export class Perfil implements OnInit {
   private profileSvc = inject(ProfileService);
   protected auth = inject(AuthService);
+  protected prefs = inject(PreferencesService);
   private fb = inject(FormBuilder);
 
   guardando = signal(false);
@@ -83,5 +85,33 @@ export class Perfil implements OnInit {
         this.passwordError.set(err.error?.error || 'No se pudo cambiar la contraseña.');
       },
     });
+  }
+
+  // Preferencias de interfaz: se aplican al instante (sin botón "Guardar"),
+  // ya que solo afectan a este dispositivo y no hay nada que perder si el
+  // usuario cambia de opinión — probar un acento no debería sentirse como
+  // un compromiso.
+  setAcento(acento: Acento) {
+    this.prefs.update({ acento });
+  }
+
+  setTamanoTexto(tamanoTexto: TamanoTexto) {
+    this.prefs.update({ tamanoTexto });
+  }
+
+  setDensidad(densidad: Densidad) {
+    this.prefs.update({ densidad });
+  }
+
+  toggleReducirAnimaciones(valor: boolean) {
+    this.prefs.update({ reducirAnimaciones: valor });
+  }
+
+  toggleDocenteAutoAbrirPlanilla(valor: boolean) {
+    this.prefs.update({ docenteAutoAbrirPlanilla: valor });
+  }
+
+  toggleAlumnoSoloVencidas(valor: boolean) {
+    this.prefs.update({ alumnoSoloVencidas: valor });
   }
 }

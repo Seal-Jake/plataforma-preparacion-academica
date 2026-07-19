@@ -13,6 +13,96 @@
 </section>
 
 <section class="card">
+  <h2 class="section-title"><app-icon name="camera" [size]="18" /> Personalización</h2>
+  <p class="muted">Estos ajustes son solo de este dispositivo: se aplican al instante, no hace falta guardar.</p>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title"><app-icon name="camera" [size]="14" /> Estética · Acento de color</p>
+    <div class="acento-row">
+      <button
+        type="button"
+        class="acento-swatch acento-azul"
+        [class.selected]="prefs.prefs().acento === 'azul'"
+        (click)="setAcento('azul')"
+        aria-label="Azul eléctrico"
+      ></button>
+      <button
+        type="button"
+        class="acento-swatch acento-magenta"
+        [class.selected]="prefs.prefs().acento === 'magenta'"
+        (click)="setAcento('magenta')"
+        aria-label="Magenta"
+      ></button>
+      <button
+        type="button"
+        class="acento-swatch acento-violeta"
+        [class.selected]="prefs.prefs().acento === 'violeta'"
+        (click)="setAcento('violeta')"
+        aria-label="Violeta"
+      ></button>
+      <button
+        type="button"
+        class="acento-swatch acento-cian"
+        [class.selected]="prefs.prefs().acento === 'cian'"
+        (click)="setAcento('cian')"
+        aria-label="Cian"
+      ></button>
+    </div>
+  </div>
+
+  <div class="fieldset-section">
+    <p class="fieldset-title"><app-icon name="edit" [size]="14" /> Comodidad</p>
+    <div class="form-field">
+      <label>Tamaño de texto</label>
+      <div class="toggle-row">
+        <button type="button" class="secondary small" [class.active]="prefs.prefs().tamanoTexto === 'normal'" (click)="setTamanoTexto('normal')">Normal</button>
+        <button type="button" class="secondary small" [class.active]="prefs.prefs().tamanoTexto === 'grande'" (click)="setTamanoTexto('grande')">Grande</button>
+      </div>
+    </div>
+    <div class="form-field">
+      <label>Densidad</label>
+      <div class="toggle-row">
+        <button type="button" class="secondary small" [class.active]="prefs.prefs().densidad === 'comoda'" (click)="setDensidad('comoda')">Cómoda</button>
+        <button type="button" class="secondary small" [class.active]="prefs.prefs().densidad === 'compacta'" (click)="setDensidad('compacta')">Compacta</button>
+      </div>
+    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" [ngModel]="prefs.prefs().reducirAnimaciones" (ngModelChange)="toggleReducirAnimaciones($event)" [ngModelOptions]="{standalone: true}" />
+      Reducir animaciones
+    </label>
+  </div>
+
+  @if (auth.isDocente()) {
+    <div class="fieldset-section">
+      <p class="fieldset-title"><app-icon name="chart" [size]="14" /> Mecánica</p>
+      <label class="checkbox-row">
+        <input
+          type="checkbox"
+          [ngModel]="prefs.prefs().docenteAutoAbrirPlanilla"
+          (ngModelChange)="toggleDocenteAutoAbrirPlanilla($event)"
+          [ngModelOptions]="{standalone: true}"
+        />
+        Abrir la planilla de notas automáticamente al entrar a "Estudiantes y Rúbrica"
+      </label>
+    </div>
+  }
+  @if (auth.isEstudiante()) {
+    <div class="fieldset-section">
+      <p class="fieldset-title"><app-icon name="chart" [size]="14" /> Mecánica</p>
+      <label class="checkbox-row">
+        <input
+          type="checkbox"
+          [ngModel]="prefs.prefs().alumnoSoloVencidas"
+          (ngModelChange)="toggleAlumnoSoloVencidas($event)"
+          [ngModelOptions]="{standalone: true}"
+        />
+        Mostrar solo pendientes vencidas en mi Dashboard
+      </label>
+    </div>
+  }
+</section>
+
+<section class="card">
   <h2 class="section-title"><app-icon name="edit" [size]="18" /> Datos y preferencias</h2>
   <form [formGroup]="perfilForm" (ngSubmit)="guardarPerfil()">
     <div class="form-field">

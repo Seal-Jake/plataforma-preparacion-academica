@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { PreferencesService } from '../../../core/services/preferences.service';
 import { DashboardResponse } from '../../../core/models/models';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
@@ -14,8 +15,15 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 })
 export class Dashboard implements OnInit {
   private dashboardSvc = inject(DashboardService);
+  protected prefs = inject(PreferencesService);
 
   data = signal<DashboardResponse | null>(null);
+
+  pendientesVisibles = computed(() => {
+    const d = this.data();
+    if (!d) return [];
+    return this.prefs.prefs().alumnoSoloVencidas ? d.pendientes.filter((p) => p.vencido) : d.pendientes;
+  });
 
   ngOnInit() {
     this.dashboardSvc.get().subscribe((d) => this.data.set(d));

@@ -15,13 +15,13 @@
   }
 
   <div class="tabs">
-    <button [class.active]="tab() === 'sesiones'" (click)="tab.set('sesiones')">
+    <button [class.active]="tab() === 'sesiones'" (click)="selectTab('sesiones')">
       <app-icon name="exam" [size]="15" /> Sesiones de la Unidad
     </button>
-    <button [class.active]="tab() === 'estudiantes'" (click)="tab.set('estudiantes')">
+    <button [class.active]="tab() === 'estudiantes'" (click)="selectTab('estudiantes')">
       <app-icon name="users" [size]="15" /> Estudiantes y Rúbrica
     </button>
-    <button [class.active]="tab() === 'exportar'" (click)="tab.set('exportar')">
+    <button [class.active]="tab() === 'exportar'" (click)="selectTab('exportar')">
       <app-icon name="download" [size]="15" /> Exportar
     </button>
   </div>

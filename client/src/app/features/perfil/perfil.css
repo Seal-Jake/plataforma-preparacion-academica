@@ -30,3 +30,46 @@ section.card {
   font-weight: 700;
   color: var(--accent);
 }
+
+.acento-row {
+  display: flex;
+  gap: 0.6rem;
+}
+.acento-swatch {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: none;
+  background: linear-gradient(180deg, var(--swatch-color-light) 0%, var(--swatch-color) 60%);
+}
+.acento-swatch.selected {
+  border-color: var(--fg);
+}
+.acento-swatch.acento-azul {
+  --swatch-color: #2563eb;
+  --swatch-color-light: #6c95f5;
+}
+.acento-swatch.acento-magenta {
+  --swatch-color: #db2777;
+  --swatch-color-light: #ee6ba8;
+}
+.acento-swatch.acento-violeta {
+  --swatch-color: #7c3aed;
+  --swatch-color-light: #ad84f4;
+}
+.acento-swatch.acento-cian {
+  --swatch-color: #0e7490;
+  --swatch-color-light: #4bb8cf;
+}
+
+.toggle-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.toggle-row button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}

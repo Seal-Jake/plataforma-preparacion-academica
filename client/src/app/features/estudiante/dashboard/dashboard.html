@@ -15,7 +15,10 @@
 
   <section class="card">
     <h2 class="section-title"><app-icon name="clock" [size]="18" /> Pendientes con fecha límite</h2>
-    @if (d.pendientes.length > 0) {
+    @if (prefs.prefs().alumnoSoloVencidas) {
+      <p class="muted"><app-icon name="alert-triangle" [size]="13" /> Mostrando solo las vencidas (cámbialo en Perfil &gt; Personalización).</p>
+    }
+    @if (pendientesVisibles().length > 0) {
       <table>
         <thead>
           <tr>
@@ -27,7 +30,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (p of d.pendientes; track p.sessionId) {
+          @for (p of pendientesVisibles(); track p.sessionId) {
             <tr>
               <td>{{ p.title }}</td>
               <td>{{ p.categoriaNombre }}</td>
@@ -47,6 +50,8 @@
           }
         </tbody>
       </table>
+    } @else if (prefs.prefs().alumnoSoloVencidas && d.pendientes.length > 0) {
+      <app-empty-state icon="check-circle" title="Ninguna pendiente está vencida" description="Tienes pendientes, pero ninguna vencida todavía." />
     } @else {
       <app-empty-state
         icon="check-circle"

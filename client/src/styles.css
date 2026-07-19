@@ -5,27 +5,89 @@
   --border: #2b3040;
   --fg: #e6e8ef;
   --fg-muted: #9aa1b2;
-  --accent: #5b8cff;
-  --accent-hover: #4372e6;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
   --success: #35c48f;
   --warning: #e6b23a;
   --danger: #e2555a;
-  --radius: 8px;
+  --radius: 12px;
+  --radius-pill: 999px;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-scale: 1;
+  --space-scale: 1;
 }
 
-body.theme-light {
+/* Todas las clases de preferencia (tema, acento, comodidad) se aplican en
+   <html>, no en <body>: así una sola cascada de custom properties llega a
+   cualquier regla que las use, sin importar si el selector vive a nivel de
+   body o de un descendiente — <html> es ancestro de todo lo demás. */
+html.theme-light {
   --bg: #f4f5f8;
   --bg-elevated: #ffffff;
   --bg-card: #ffffff;
   --border: #dde1e8;
   --fg: #1b1e27;
   --fg-muted: #5b6272;
-  --accent: #3a63d8;
-  --accent-hover: #2c4fb8;
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
   --success: #1e8f66;
   --warning: #a8760a;
   --danger: #c53a3f;
+}
+
+/* Paleta de acentos Y2K minimalista: el tema (oscuro/claro) controla el
+   fondo; el acento es una capa independiente que el usuario elige aparte
+   (ver PreferencesService + Perfil > Personalización). Los valores están
+   elegidos para mantener buen contraste con texto blanco en botones. */
+html.accent-azul {
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+}
+html.theme-light.accent-azul {
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+}
+html.accent-magenta {
+  --accent: #db2777;
+  --accent-hover: #be185d;
+}
+html.theme-light.accent-magenta {
+  --accent: #be185d;
+  --accent-hover: #9d174d;
+}
+html.accent-violeta {
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+}
+html.theme-light.accent-violeta {
+  --accent: #6d28d9;
+  --accent-hover: #5b21b6;
+}
+html.accent-cian {
+  --accent: #0e7490;
+  --accent-hover: #0c5d74;
+}
+html.theme-light.accent-cian {
+  --accent: #0c6478;
+  --accent-hover: #0a4f60;
+}
+
+/* Comodidad: tamaño de texto y densidad, aplicados como escalas globales
+   en vez de reescribir cada regla individualmente. */
+html.texto-grande {
+  --font-scale: 1.125;
+}
+html.densidad-compacta {
+  --space-scale: 0.72;
+}
+
+/* Reducir animaciones: apaga transiciones/animaciones de toda la app para
+   quien las encuentre incómodas o distractoras, sin afectar la funcionalidad. */
+html.reducir-animaciones *,
+html.reducir-animaciones *::before,
+html.reducir-animaciones *::after {
+  transition-duration: 0.001ms !important;
+  animation-duration: 0.001ms !important;
 }
 
 * {
@@ -35,6 +97,10 @@ body.theme-light {
 html,
 body {
   height: 100%;
+}
+
+html {
+  font-size: calc(16px * var(--font-scale));
 }
 
 body {
@@ -78,39 +144,44 @@ textarea {
   font-size: 0.95rem;
 }
 
+/* Botón "bubble" — la firma visual Y2K: forma de píldora con un gloss sutil
+   (más claro arriba, el tono base abajo), sin caer en exceso de brillo. */
 button {
   cursor: pointer;
-  background: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 82%, white) 0%, var(--accent) 55%);
   color: white;
   border: none;
-  border-radius: var(--radius);
-  padding: 0.5rem 1rem;
-  transition: background 0.15s, transform 0.1s;
+  border-radius: var(--radius-pill);
+  padding: calc(0.5rem * var(--space-scale)) calc(1.1rem * var(--space-scale));
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 button:active {
   transform: scale(0.98);
 }
 button:hover {
-  background: var(--accent-hover);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-hover) 82%, white) 0%, var(--accent-hover) 55%);
 }
 button:disabled {
   background: var(--border);
   color: var(--fg-muted);
   cursor: not-allowed;
+  box-shadow: none;
 }
 button.secondary {
   background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--fg);
+  box-shadow: none;
 }
 button.secondary:hover {
   background: var(--bg-elevated);
 }
 button.danger {
-  background: var(--danger);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--danger) 82%, white) 0%, var(--danger) 55%);
 }
 
 input,
@@ -141,12 +212,15 @@ a:focus-visible {
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
+  border-radius: calc(var(--radius) * 1.3);
+  padding: calc(1.25rem * var(--space-scale));
   transition: border-color 0.15s;
   /* Las tablas anchas (planillas, listas de preguntas) se desplazan dentro
      de la tarjeta en vez de romper el ancho de la página en móvil. */
   overflow-x: auto;
+  /* Filo superior sutilmente iluminado: el único guiño "glass panel" Y2K
+     que se permite este sistema minimalista, casi imperceptible. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .section-title {
@@ -161,8 +235,8 @@ a:focus-visible {
 .fieldset-section {
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.1rem;
-  margin-bottom: 1.1rem;
+  padding: calc(1rem * var(--space-scale)) calc(1.1rem * var(--space-scale));
+  margin-bottom: calc(1.1rem * var(--space-scale));
 }
 .fieldset-section > .fieldset-title {
   font-size: 0.8rem;
@@ -219,7 +293,7 @@ table {
 th,
 td {
   text-align: left;
-  padding: 0.55rem 0.7rem;
+  padding: calc(0.55rem * var(--space-scale)) calc(0.7rem * var(--space-scale));
   border-bottom: 1px solid var(--border);
 }
 th {
@@ -234,7 +308,7 @@ th {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  margin-bottom: 1rem;
+  margin-bottom: calc(1rem * var(--space-scale));
 }
 .form-field label {
   font-size: 0.85rem;

@@ -11,6 +11,7 @@ import { EnrollmentsService } from '../../../core/services/enrollments.service';
 import { EntregasService } from '../../../core/services/entregas.service';
 import { RubricService } from '../../../core/services/rubric.service';
 import { ExportService } from '../../../core/services/export.service';
+import { PreferencesService } from '../../../core/services/preferences.service';
 import { RubricChart } from '../../../shared/components/rubric-chart/rubric-chart';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
@@ -45,6 +46,7 @@ export class UnitDetail implements OnInit {
   private entregasSvc = inject(EntregasService);
   private rubricSvc = inject(RubricService);
   private exportSvc = inject(ExportService);
+  private prefs = inject(PreferencesService);
   private fb = inject(FormBuilder);
 
   etiquetaTipoSesionFijo = etiquetaTipoSesionFijo;
@@ -54,6 +56,13 @@ export class UnitDetail implements OnInit {
   etiquetaCantidadPreguntas = etiquetaCantidadPreguntas;
 
   tab = signal<Tab>('sesiones');
+
+  selectTab(t: Tab) {
+    this.tab.set(t);
+    if (t === 'estudiantes' && this.prefs.prefs().docenteAutoAbrirPlanilla && !this.showPlanilla()) {
+      this.togglePlanilla();
+    }
+  }
   unit = signal<Unit | null>(null);
   sessions = signal<AcademicSession[]>([]); // Examen de Unidad + Proyecto de Investigación de Unidad
   enrollments = signal<Enrollment[]>([]);
