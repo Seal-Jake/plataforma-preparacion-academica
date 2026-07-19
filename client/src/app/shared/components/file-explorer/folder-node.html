@@ -26,6 +26,9 @@
       <div class="folder-actions">
         <button class="secondary small" (click)="showAddSubfolder.set(!showAddSubfolder())">+ Subcarpeta</button>
         <button class="secondary small" (click)="showUploadForm.set(!showUploadForm())">+ Archivo/Nota</button>
+        @if (tieneContenido()) {
+          <button class="danger small" (click)="vaciarCarpeta()" title="Borra todo el contenido de esta carpeta, pero la deja existir">Vaciar</button>
+        }
         @if (!folder.tipoFijo) {
           <button class="secondary small" (click)="startRename()">Renombrar</button>
           <button class="danger small" (click)="eliminarCarpeta()">Eliminar</button>

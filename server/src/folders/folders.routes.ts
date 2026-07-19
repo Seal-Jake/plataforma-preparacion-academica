@@ -152,6 +152,53 @@ foldersRouter.delete(
   })
 );
 
+// Vacía una carpeta: borra todos sus archivos y, de sus subcarpetas, borra
+// enteras las que son libres (cascada) y vacía recursivamente las que son
+// fijas (nunca se borran). La carpeta sobre la que se llama tampoco se
+// borra nunca, aunque sea fija — a diferencia de DELETE /:id, esto es
+// seguro de llamar sobre cualquier carpeta.
+async function vaciarCarpeta(folderId: string) {
+  await prisma.fileItem.deleteMany({ where: { folderId } });
+  const hijos = await prisma.folder.findMany({ where: { parentId: folderId } });
+  for (const hijo of hijos) {
+    if (hijo.tipoFijo) {
+      await vaciarCarpeta(hijo.id);
+    } else {
+      await prisma.folder.delete({ where: { id: hijo.id } });
+    }
+  }
+}
+
+foldersRouter.post(
+  '/:id/vaciar',
+  requireAuth,
+  requireRole('docente'),
+  asyncHandler(async (req, res) => {
+    const folder = await prisma.folder.findUnique({ where: { id: req.params.id } });
+    if (!folder) throw notFound('Carpeta');
+    await vaciarCarpeta(folder.id);
+    res.json({ ok: true });
+  })
+);
+
+// Vacía TODO el contenido de un tema de una sola vez: recorre las carpetas
+// raíz (siempre fijas) y vacía cada una, dejando intacto el árbol de
+// carpetas fijas pero sin ningún archivo ni subcarpeta libre.
+foldersRouter.post(
+  '/topic/:topicId/vaciar',
+  requireAuth,
+  requireRole('docente'),
+  asyncHandler(async (req, res) => {
+    const topic = await prisma.topic.findUnique({ where: { id: req.params.topicId } });
+    if (!topic) throw notFound('Tema');
+    const raices = await prisma.folder.findMany({ where: { topicId: topic.id, parentId: null } });
+    for (const raiz of raices) {
+      await vaciarCarpeta(raiz.id);
+    }
+    res.json({ ok: true });
+  })
+);
+
 // Sube un archivo y/o crea una nota de texto dentro de una carpeta.
 foldersRouter.post(
   '/:id/archivos',

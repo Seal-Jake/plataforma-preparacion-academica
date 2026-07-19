@@ -10,6 +10,12 @@
     </div>
   }
 
+  @if (modo === 'docente' && tieneContenido()) {
+    <div class="explorer-toolbar">
+      <button class="danger small" (click)="vaciarTema()"><app-icon name="trash" [size]="13" /> Vaciar todo el tema</button>
+    </div>
+  }
+
   <div class="explorer-tree">
     @for (folder of tree(); track folder.id) {
       <app-folder-node [folder]="folder" [modo]="modo" [topicId]="topicId" (changed)="reload()" />

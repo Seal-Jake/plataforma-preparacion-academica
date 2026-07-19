@@ -80,6 +80,26 @@ export class FolderNodeComponent {
     this.foldersSvc.delete(this.folder.id).subscribe(() => this.changed.emit());
   }
 
+  tieneContenido(): boolean {
+    return this.folder.archivos.length > 0 || this.folder.children.length > 0;
+  }
+
+  // A diferencia de "Eliminar", vacía borra todo lo de adentro (archivos y
+  // subcarpetas, recursivamente) pero deja la carpeta misma intacta —
+  // funciona igual sobre carpetas fijas que sobre carpetas libres, así que
+  // sirve para "resetear" el contenido de una carpeta fija que no se puede
+  // borrar por completo.
+  async vaciarCarpeta() {
+    if (
+      !(await this.confirmSvc.confirm(
+        `¿Vaciar la carpeta "${this.folder.nombre}"? Se borrará todo su contenido (archivos y subcarpetas), pero la carpeta seguirá existiendo, vacía.`,
+        { confirmLabel: 'Vaciar' }
+      ))
+    )
+      return;
+    this.foldersSvc.vaciar(this.folder.id).subscribe(() => this.changed.emit());
+  }
+
   async eliminarArchivo(fileId: string) {
     if (!(await this.confirmSvc.confirm('¿Eliminar este archivo?'))) return;
     this.filesSvc.delete(fileId).subscribe(() => this.changed.emit());
