@@ -12,6 +12,7 @@ import { EntregasService } from '../../../core/services/entregas.service';
 import { RubricService } from '../../../core/services/rubric.service';
 import { ExportService } from '../../../core/services/export.service';
 import { PreferencesService } from '../../../core/services/preferences.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { RubricChart } from '../../../shared/components/rubric-chart/rubric-chart';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
@@ -55,6 +56,7 @@ export class CourseDetail implements OnInit {
   private rubricSvc = inject(RubricService);
   private exportSvc = inject(ExportService);
   private prefs = inject(PreferencesService);
+  private confirmSvc = inject(ConfirmDialogService);
   private fb = inject(FormBuilder);
 
   etiquetaTipoSesionFijo = etiquetaTipoSesionFijo;
@@ -111,12 +113,11 @@ export class CourseDetail implements OnInit {
   importResultado = signal<{ inscritos: string[]; noEncontrados: string[] } | null>(null);
 
   entregasSessionId = signal<string | null>(null);
+  entregasSessionVencido = signal(false);
   entregas = signal<Entrega[]>([]);
-  gradingStudentId = signal<string | null>(null);
-  gradeForm = this.fb.group({
-    nota: [0, [Validators.required, Validators.min(0), Validators.max(20)]],
-    feedback: [''],
-  });
+  notaEdit: Record<string, number> = {};
+  feedbackEdit: Record<string, string> = {};
+  guardadoStudentId = signal<string | null>(null);
 
   enrollForm = this.fb.group({ studentId: ['', Validators.required] });
   newStudentForm = this.fb.group({
@@ -193,8 +194,14 @@ export class CourseDetail implements OnInit {
       });
   }
 
-  eliminarTarea(s: AcademicSession) {
-    if (!confirm(`¿Eliminar "${s.title}"? Se borrarán también todas las respuestas y entregas asociadas.`)) return;
+  duplicarTarea(s: AcademicSession) {
+    this.createForm.reset({ tipo: s.tipoFijo, title: `${s.title} (copia)`, dueDate: '', timeLimitMinutes: null });
+    this.showCreateForm.set(true);
+  }
+
+  async eliminarTarea(s: AcademicSession) {
+    if (!(await this.confirmSvc.confirm(`¿Eliminar "${s.title}"? Se borrarán también todas las respuestas y entregas asociadas.`)))
+      return;
     this.sessionsSvc.delete(s.id).subscribe(() => {
       if (this.editingSessionId() === s.id) this.editingSessionId.set(null);
       this.reloadSessions();
@@ -262,49 +269,70 @@ export class CourseDetail implements OnInit {
 
   verEntregas(s: AcademicSession) {
     this.entregasSessionId.set(s.id);
-    this.entregasSvc.listBySession(s.id).subscribe((e) => this.entregas.set(e));
+    this.entregasSessionVencido.set(!!s.vencido);
+    this.entregasSvc.listBySession(s.id).subscribe((e) => {
+      this.entregas.set(e);
+      this.syncEditState();
+    });
+  }
+
+  private syncEditState() {
+    for (const en of this.enrollments()) {
+      const entrega = this.entregaDe(en.studentId);
+      this.notaEdit[en.studentId] = entrega?.nota ?? 0;
+      this.feedbackEdit[en.studentId] = entrega?.feedback ?? '';
+    }
   }
 
   entregaDe(studentId: string): Entrega | undefined {
     return this.entregas().find((e) => e.studentId === studentId);
   }
 
-  estadoEntrega(studentId: string): 'sin_responder' | 'pendiente' | 'calificado' {
+  // "vencida_sin_entrega": la tarea venció y el alumno no entregó nada — el
+  // backend ya la calificó en 0 automáticamente (ver rubric.data.ts), pero
+  // eso no crea una fila de Entrega, así que hay que distinguirlo aquí de
+  // "sin_responder" a secas para no dar a entender que todavía está a tiempo.
+  estadoEntrega(studentId: string): 'sin_responder' | 'vencida_sin_entrega' | 'pendiente' | 'calificado' {
     const e = this.entregaDe(studentId);
     if (e?.nota !== null && e?.nota !== undefined) return 'calificado';
     if (e?.entregadoAt) return 'pendiente';
+    if (this.entregasSessionVencido()) return 'vencida_sin_entrega';
     return 'sin_responder';
   }
 
-  startCalificar(studentId: string) {
-    this.gradingStudentId.set(studentId);
-    const e = this.entregaDe(studentId);
-    this.gradeForm.reset({ nota: e?.nota ?? 0, feedback: e?.feedback ?? '' });
-  }
-
-  guardarCalificacion(studentId: string) {
-    if (this.gradeForm.invalid) return;
+  guardarCalificacionInline(studentId: string) {
     const sessionId = this.entregasSessionId();
     if (!sessionId) return;
-    const { nota, feedback } = this.gradeForm.getRawValue();
-    this.entregasSvc.calificar(sessionId, studentId, nota!, feedback || undefined).subscribe(() => {
-      this.gradingStudentId.set(null);
-      this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
+    const nota = this.notaEdit[studentId];
+    if (nota === null || nota === undefined || nota < 0 || nota > 20) return;
+    const feedback = this.feedbackEdit[studentId];
+    this.entregasSvc.calificar(sessionId, studentId, nota, feedback || undefined).subscribe(() => {
+      this.guardadoStudentId.set(studentId);
+      setTimeout(() => this.guardadoStudentId.set(null), 2000);
+      this.entregasSvc.listBySession(sessionId).subscribe((e) => {
+        this.entregas.set(e);
+        this.syncEditState();
+      });
       this.onCalificacionCambiada();
     });
   }
 
-  reabrirEntrega(studentId: string) {
+  async reabrirEntrega(studentId: string) {
     const sessionId = this.entregasSessionId();
     if (!sessionId) return;
     const nombre = this.studentName(studentId);
-    if (!confirm(`¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`)) return;
+    if (
+      !(await this.confirmSvc.confirm(
+        `¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`,
+        { confirmLabel: 'Reabrir' }
+      ))
+    )
+      return;
     this.entregasSvc.reabrir(sessionId, studentId).subscribe(() => {
-      // Si el formulario de calificar de este mismo alumno estaba abierto,
-      // se cierra: seguiría teniendo la nota vieja precargada y, si se
-      // guardara, recrearía la entrega que se acaba de borrar.
-      if (this.gradingStudentId() === studentId) this.gradingStudentId.set(null);
-      this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
+      this.entregasSvc.listBySession(sessionId).subscribe((e) => {
+        this.entregas.set(e);
+        this.syncEditState();
+      });
       this.onCalificacionCambiada();
     });
   }
@@ -328,9 +356,15 @@ export class CourseDetail implements OnInit {
     this.exportSvc.exportCourseProgresoPdf(this.courseId, studentId);
   }
 
-  eliminarEstudiante(studentId: string) {
+  async eliminarEstudiante(studentId: string) {
     const nombre = this.studentName(studentId);
-    if (!confirm(`¿Eliminar por completo la cuenta de ${nombre}? Esto borra su acceso a TODOS los cursos, no solo este, y no se puede deshacer.`)) return;
+    if (
+      !(await this.confirmSvc.confirm(
+        `¿Eliminar por completo la cuenta de ${nombre}? Esto borra su acceso a TODOS los cursos, no solo este, y no se puede deshacer.`,
+        { confirmLabel: 'Eliminar cuenta' }
+      ))
+    )
+      return;
     this.enrollmentsSvc.deleteStudent(studentId).subscribe(() => {
       if (this.selectedStudentId() === studentId) this.selectedStudentId.set(null);
       this.reloadEnrollments();

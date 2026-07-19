@@ -92,6 +92,8 @@ npm test
 
 Corre la suite de Jest del backend. El foco está en `server/src/rubric/rubric.service.test.ts`, que cubre el cálculo de la rúbrica genérica (la lógica más sensible del proyecto): categorías con/sin datos, promedio ponderado, renormalización cuando faltan categorías, cualquier cantidad/nombre de categorías, y redondeo.
 
+**CI**: `.github/workflows/ci.yml` corre en cada push/PR a `main`: los tests de Jest del backend, `tsc --noEmit` del backend, y `ng build` del frontend (que valida tipos y también los templates de Angular, donde `tsc` solo no llega). Sirve como red antes de que un cambio llegue a Render.
+
 ## Cómo funciona el contenido de un tema (explorador de archivos)
 
 Cada tema nace con **4 carpetas raíz fijas** (no se pueden renombrar ni borrar): *Concepto y Marco Teórico*, *Mecánica y Ejemplos*, *Actividad Práctica*, *Aplicación a la Economía y Administración*. Dentro de cada una, el docente crea subcarpetas, sube archivos (PDF, Word, PowerPoint, Excel, imágenes) o escribe notas de texto directamente, como en un Explorador de Archivos. El estudiante navega el mismo árbol en modo lectura y **marca manualmente cada carpeta como "completada"**, lo que alimenta la barra de progreso del tema, de la unidad y del dashboard general.

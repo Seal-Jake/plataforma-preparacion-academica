@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SessionsService } from '../../../core/services/sessions.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { Enrollment, SessionResult } from '../../../core/models/models';
 import { Icon } from '../icon/icon';
 
@@ -12,6 +13,7 @@ import { Icon } from '../icon/icon';
 })
 export class CalificarAbiertas implements OnInit {
   private sessionsSvc = inject(SessionsService);
+  private confirmSvc = inject(ConfirmDialogService);
 
   @Input({ required: true }) sessionId!: string;
   @Input({ required: true }) enrollments!: Enrollment[];
@@ -73,11 +75,17 @@ export class CalificarAbiertas implements OnInit {
     });
   }
 
-  reabrirIntento() {
+  async reabrirIntento() {
     const studentId = this.selectedStudentId();
     if (!studentId) return;
     const nombre = this.studentName(studentId);
-    if (!confirm(`¿Reabrir el intento de ${nombre}? Se borrarán todas sus respuestas de esta sesión (incluidas las ya calificadas) para que pueda rendirla de nuevo desde cero.`)) return;
+    if (
+      !(await this.confirmSvc.confirm(
+        `¿Reabrir el intento de ${nombre}? Se borrarán todas sus respuestas de esta sesión (incluidas las ya calificadas) para que pueda rendirla de nuevo desde cero.`,
+        { confirmLabel: 'Reabrir' }
+      ))
+    )
+      return;
     // Se oculta el formulario mientras se reabre: si quedara visible con las
     // notas anteriores, un clic en "Guardar" en ese instante las volvería a
     // grabar sobre el intento recién borrado.

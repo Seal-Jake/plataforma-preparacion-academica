@@ -79,6 +79,7 @@
                 @if (esSesionDeEvidencia(s.tipoFijo)) {
                   <button class="secondary small" (click)="verEntregas(s)"><app-icon name="file-text" [size]="13" /> Ver entregas</button>
                 }
+                <button class="secondary small" (click)="duplicarTarea(s)"><app-icon name="copy" [size]="13" /> Duplicar</button>
                 <button class="danger small" (click)="eliminarTarea(s)"><app-icon name="trash" [size]="13" /> Eliminar</button>
               </td>
             </tr>
@@ -172,60 +173,78 @@
     @if (entregasSessionId(); as sid) {
       <div class="entregas-panel">
         <h3 class="section-title"><app-icon name="file-text" [size]="16" /> Entregas</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Estudiante</th>
-              <th>Estado</th>
-              <th>Nota</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (e of enrollments(); track e.id) {
+        <p class="muted">Escribe la nota (y el feedback, opcional) y presiona Guardar — puedes calificar así aunque el alumno no haya entregado nada.</p>
+        <div class="table-scroll">
+          <table class="entregas-table">
+            <thead>
               <tr>
-                <td>{{ e.student?.name }}</td>
-                <td>
-                  @switch (estadoEntrega(e.studentId)) {
-                    @case ('calificado') {
-                      <span class="badge success"><app-icon name="check-circle" [size]="11" /> Calificado</span>
-                    }
-                    @case ('pendiente') {
-                      <span class="badge warning"><app-icon name="clock" [size]="11" /> Entregó, sin calificar</span>
-                    }
-                    @default {
-                      <span class="badge"><app-icon name="alert-triangle" [size]="11" /> Sin entregar</span>
-                    }
-                  }
-                </td>
-                <td>{{ entregaDe(e.studentId)?.nota ?? '—' }}</td>
-                <td class="actions">
-                  <button class="secondary small" (click)="startCalificar(e.studentId)"><app-icon name="edit" [size]="13" /> Calificar</button>
-                  @if (estadoEntrega(e.studentId) !== 'sin_responder') {
-                    <button class="danger small" (click)="reabrirEntrega(e.studentId)"><app-icon name="refresh" [size]="13" /> Reabrir</button>
-                  }
-                </td>
+                <th>Estudiante</th>
+                <th>Estado</th>
+                <th>Nota</th>
+                <th>Feedback</th>
+                <th></th>
               </tr>
-            }
-          </tbody>
-        </table>
-
-        @if (gradingStudentId(); as sid2) {
-          <form class="card session-form" [formGroup]="gradeForm" (ngSubmit)="guardarCalificacion(sid2)">
-            <h3>Calificar entrega de {{ studentName(sid2) }}</h3>
-            <p class="muted contenido-preview">{{ entregaDe(sid2)?.contenidoTexto || 'Sin texto (revisa si adjuntó un archivo).' }}</p>
-            <div class="form-field">
-              <label>Nota (0-20)</label>
-              <input type="number" formControlName="nota" min="0" max="20" step="0.5" />
-            </div>
-            <div class="form-field">
-              <label>Feedback</label>
-              <textarea formControlName="feedback" rows="3"></textarea>
-            </div>
-            <button type="submit"><app-icon name="check-circle" [size]="14" /> Guardar calificación</button>
-            <button type="button" class="secondary" (click)="gradingStudentId.set(null)">Cancelar</button>
-          </form>
-        }
+            </thead>
+            <tbody>
+              @for (e of enrollments(); track e.id) {
+                <tr>
+                  <td>
+                    {{ e.student?.name }}
+                    @if (entregaDe(e.studentId)?.contenidoTexto; as texto) {
+                      <p class="field-hint contenido-inline" [title]="texto">{{ texto }}</p>
+                    }
+                  </td>
+                  <td>
+                    @switch (estadoEntrega(e.studentId)) {
+                      @case ('calificado') {
+                        <span class="badge success"><app-icon name="check-circle" [size]="11" /> Calificado</span>
+                      }
+                      @case ('pendiente') {
+                        <span class="badge warning"><app-icon name="clock" [size]="11" /> Entregó, sin calificar</span>
+                      }
+                      @case ('vencida_sin_entrega') {
+                        <span class="badge danger"><app-icon name="alert-triangle" [size]="11" /> Vencida, 0 automático</span>
+                      }
+                      @default {
+                        <span class="badge"><app-icon name="alert-triangle" [size]="11" /> Sin entregar</span>
+                      }
+                    }
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="nota-inline"
+                      min="0"
+                      max="20"
+                      step="0.5"
+                      [(ngModel)]="notaEdit[e.studentId]"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      class="feedback-inline"
+                      placeholder="Feedback (opcional)"
+                      [(ngModel)]="feedbackEdit[e.studentId]"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                  </td>
+                  <td class="actions">
+                    <button class="secondary small" (click)="guardarCalificacionInline(e.studentId)">
+                      <app-icon name="check-circle" [size]="13" /> Guardar
+                    </button>
+                    @if (guardadoStudentId() === e.studentId) {
+                      <span class="badge success"><app-icon name="check-circle" [size]="11" /> Guardado</span>
+                    }
+                    @if (estadoEntrega(e.studentId) === 'pendiente' || estadoEntrega(e.studentId) === 'calificado') {
+                      <button class="danger small" (click)="reabrirEntrega(e.studentId)"><app-icon name="refresh" [size]="13" /> Reabrir</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     }
   </section>

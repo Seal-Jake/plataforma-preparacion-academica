@@ -115,8 +115,6 @@ export interface AcademicSession {
   timeLimitMinutes?: number | null;
   abiertoParaTodos: boolean;
   requiereEvidencia: boolean;
-  pesoAciertos: number;
-  pesoEvidencia: number;
   createdAt: string;
   vencido?: boolean;
   estado?: 'no_iniciado' | 'en_curso' | 'entregado';
@@ -187,6 +185,8 @@ export interface CategoriaRubrica {
   peso: number;
   nota: number | null;
   tieneDatos: boolean;
+  cantidad?: number;
+  cantidadConDatos?: number;
 }
 
 export interface RubricaResultado {

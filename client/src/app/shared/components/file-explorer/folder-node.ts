@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, inject, signal } from '@angular
 import { FormsModule } from '@angular/forms';
 import { FoldersService } from '../../../core/services/folders.service';
 import { FilesService } from '../../../core/services/files.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { FolderNode } from '../../../core/models/models';
 
 @Component({
@@ -13,6 +14,7 @@ import { FolderNode } from '../../../core/models/models';
 export class FolderNodeComponent {
   private foldersSvc = inject(FoldersService);
   private filesSvc = inject(FilesService);
+  private confirmSvc = inject(ConfirmDialogService);
 
   @Input({ required: true }) folder!: FolderNode;
   @Input({ required: true }) modo!: 'docente' | 'estudiante';
@@ -73,13 +75,13 @@ export class FolderNodeComponent {
     });
   }
 
-  eliminarCarpeta() {
-    if (!confirm(`¿Eliminar la carpeta "${this.folder.nombre}" y todo su contenido?`)) return;
+  async eliminarCarpeta() {
+    if (!(await this.confirmSvc.confirm(`¿Eliminar la carpeta "${this.folder.nombre}" y todo su contenido?`))) return;
     this.foldersSvc.delete(this.folder.id).subscribe(() => this.changed.emit());
   }
 
-  eliminarArchivo(fileId: string) {
-    if (!confirm('¿Eliminar este archivo?')) return;
+  async eliminarArchivo(fileId: string) {
+    if (!(await this.confirmSvc.confirm('¿Eliminar este archivo?'))) return;
     this.filesSvc.delete(fileId).subscribe(() => this.changed.emit());
   }
 

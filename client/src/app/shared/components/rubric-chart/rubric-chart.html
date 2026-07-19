@@ -5,7 +5,18 @@
 <div class="rubrica-detalle">
   @for (c of rubrica().categorias; track c.nombre) {
     <div class="detalle-item">
-      <span>{{ c.nombre }} ({{ c.peso }}%)</span>
+      <span>
+        {{ c.nombre }} ({{ c.peso }}%)
+        @if (c.cantidad !== undefined) {
+          <span class="detalle-cantidad">
+            @if (c.cantidad === 0) {
+              — sin tareas creadas
+            } @else {
+              — promedio de {{ c.cantidadConDatos }}/{{ c.cantidad }} {{ c.cantidad === 1 ? 'tarea' : 'tareas' }}
+            }
+          </span>
+        }
+      </span>
       <strong>{{ c.tieneDatos ? c.nota : 'Sin datos' }}</strong>
     </div>
   }

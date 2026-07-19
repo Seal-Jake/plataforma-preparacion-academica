@@ -10,6 +10,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "db:prod:run": "ts-node scripts/runAgainstProd.ts",
     "test": "jest --runInBand"
   },
   "prisma": {

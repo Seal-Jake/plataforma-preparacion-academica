@@ -1,12 +1,13 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CoursesService } from '../../../core/services/courses.service';
 import { QuestionsService } from '../../../core/services/questions.service';
 import { SessionsService } from '../../../core/services/sessions.service';
 import { EnrollmentsService } from '../../../core/services/enrollments.service';
 import { EntregasService } from '../../../core/services/entregas.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { FileExplorer } from '../../../shared/components/file-explorer/file-explorer';
 import { Icon } from '../../../shared/components/icon/icon';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
@@ -22,7 +23,7 @@ import { AcademicSession, Entrega, Enrollment, ModoRespuesta, Question, Question
 
 @Component({
   selector: 'app-topic-editor',
-  imports: [ReactiveFormsModule, RouterLink, FileExplorer, Icon, EmptyState, DatePipe, CalificarAbiertas],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, FileExplorer, Icon, EmptyState, DatePipe, CalificarAbiertas],
   templateUrl: './topic-editor.html',
   styleUrl: './topic-editor.css',
 })
@@ -33,6 +34,7 @@ export class TopicEditor implements OnInit {
   private sessionsSvc = inject(SessionsService);
   private enrollmentsSvc = inject(EnrollmentsService);
   private entregasSvc = inject(EntregasService);
+  private confirmSvc = inject(ConfirmDialogService);
   private fb = inject(FormBuilder);
 
   etiquetaTipoSesionFijo = etiquetaTipoSesionFijo;
@@ -85,8 +87,14 @@ export class TopicEditor implements OnInit {
       });
   }
 
-  eliminarTarea(s: AcademicSession) {
-    if (!confirm(`¿Eliminar "${s.title}"? Se borrarán también todas las respuestas y entregas asociadas.`)) return;
+  duplicarTarea(s: AcademicSession) {
+    this.createForm.reset({ tipo: s.tipoFijo, title: `${s.title} (copia)`, dueDate: '', timeLimitMinutes: null });
+    this.showCreateForm.set(true);
+  }
+
+  async eliminarTarea(s: AcademicSession) {
+    if (!(await this.confirmSvc.confirm(`¿Eliminar "${s.title}"? Se borrarán también todas las respuestas y entregas asociadas.`)))
+      return;
     this.sessionsSvc.delete(s.id).subscribe(() => {
       if (this.editingSessionId() === s.id) this.editingSessionId.set(null);
       this.reloadSesiones();
@@ -108,12 +116,14 @@ export class TopicEditor implements OnInit {
 
   enrollments = signal<Enrollment[]>([]);
   entregasSessionId = signal<string | null>(null);
+  entregasSessionVencido = signal(false);
   entregas = signal<Entrega[]>([]);
-  gradingStudentId = signal<string | null>(null);
-  gradeForm = this.fb.group({
-    nota: [0, [Validators.required, Validators.min(0), Validators.max(20)]],
-    feedback: [''],
-  });
+  // Nota/feedback editables directamente en cada fila de la tabla de
+  // entregas (sin un formulario aparte que obligue a hacer scroll y solo
+  // deje editar un alumno a la vez).
+  notaEdit: Record<string, number> = {};
+  feedbackEdit: Record<string, string> = {};
+  guardadoStudentId = signal<string | null>(null);
 
   private topicId!: string;
 
@@ -302,8 +312,8 @@ export class TopicEditor implements OnInit {
     }
   }
 
-  deleteQuestion(q: Question, session: AcademicSession) {
-    if (!confirm('¿Eliminar esta pregunta?')) return;
+  async deleteQuestion(q: Question, session: AcademicSession) {
+    if (!(await this.confirmSvc.confirm('¿Eliminar esta pregunta?'))) return;
     this.questionsSvc.delete(q.id).subscribe(() => {
       this.reloadSesionQuestions(session.id);
       this.reloadSesiones();
@@ -322,48 +332,72 @@ export class TopicEditor implements OnInit {
 
   verEntregas(s: AcademicSession) {
     this.entregasSessionId.set(s.id);
-    this.entregasSvc.listBySession(s.id).subscribe((e) => this.entregas.set(e));
+    this.entregasSessionVencido.set(!!s.vencido);
+    this.entregasSvc.listBySession(s.id).subscribe((e) => {
+      this.entregas.set(e);
+      this.syncEditState();
+    });
+  }
+
+  // Precarga los inputs editables de cada fila con la nota/feedback actual
+  // (o 0/vacío si el alumno todavía no tiene entrega), para que el docente
+  // pueda calificar directamente sin un paso previo de "abrir formulario".
+  private syncEditState() {
+    for (const en of this.enrollments()) {
+      const entrega = this.entregaDe(en.studentId);
+      this.notaEdit[en.studentId] = entrega?.nota ?? 0;
+      this.feedbackEdit[en.studentId] = entrega?.feedback ?? '';
+    }
   }
 
   entregaDe(studentId: string): Entrega | undefined {
     return this.entregas().find((e) => e.studentId === studentId);
   }
 
-  estadoEntrega(studentId: string): 'sin_responder' | 'pendiente' | 'calificado' {
+  // "vencida_sin_entrega": la tarea venció y el alumno no entregó nada — el
+  // backend ya la calificó en 0 automáticamente (ver rubric.data.ts), pero
+  // eso no crea una fila de Entrega, así que hay que distinguirlo aquí de
+  // "sin_responder" a secas para no dar a entender que todavía está a tiempo.
+  estadoEntrega(studentId: string): 'sin_responder' | 'vencida_sin_entrega' | 'pendiente' | 'calificado' {
     const e = this.entregaDe(studentId);
     if (e?.nota !== null && e?.nota !== undefined) return 'calificado';
     if (e?.entregadoAt) return 'pendiente';
+    if (this.entregasSessionVencido()) return 'vencida_sin_entrega';
     return 'sin_responder';
   }
 
-  startCalificar(studentId: string) {
-    this.gradingStudentId.set(studentId);
-    const e = this.entregaDe(studentId);
-    this.gradeForm.reset({ nota: e?.nota ?? 0, feedback: e?.feedback ?? '' });
-  }
-
-  guardarCalificacion(studentId: string) {
-    if (this.gradeForm.invalid) return;
+  guardarCalificacionInline(studentId: string) {
     const sessionId = this.entregasSessionId();
     if (!sessionId) return;
-    const { nota, feedback } = this.gradeForm.getRawValue();
-    this.entregasSvc.calificar(sessionId, studentId, nota!, feedback || undefined).subscribe(() => {
-      this.gradingStudentId.set(null);
-      this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
+    const nota = this.notaEdit[studentId];
+    if (nota === null || nota === undefined || nota < 0 || nota > 20) return;
+    const feedback = this.feedbackEdit[studentId];
+    this.entregasSvc.calificar(sessionId, studentId, nota, feedback || undefined).subscribe(() => {
+      this.guardadoStudentId.set(studentId);
+      setTimeout(() => this.guardadoStudentId.set(null), 2000);
+      this.entregasSvc.listBySession(sessionId).subscribe((e) => {
+        this.entregas.set(e);
+        this.syncEditState();
+      });
     });
   }
 
-  reabrirEntrega(studentId: string) {
+  async reabrirEntrega(studentId: string) {
     const sessionId = this.entregasSessionId();
     if (!sessionId) return;
     const nombre = this.studentName(studentId);
-    if (!confirm(`¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`)) return;
+    if (
+      !(await this.confirmSvc.confirm(
+        `¿Reabrir la entrega de ${nombre}? Se borrará por completo (texto, archivo y nota) para que pueda volver a entregar desde cero.`,
+        { confirmLabel: 'Reabrir' }
+      ))
+    )
+      return;
     this.entregasSvc.reabrir(sessionId, studentId).subscribe(() => {
-      // Si el formulario de calificar de este mismo alumno estaba abierto,
-      // se cierra: seguiría teniendo la nota vieja precargada y, si se
-      // guardara, recrearía la entrega que se acaba de borrar.
-      if (this.gradingStudentId() === studentId) this.gradingStudentId.set(null);
-      this.entregasSvc.listBySession(sessionId).subscribe((e) => this.entregas.set(e));
+      this.entregasSvc.listBySession(sessionId).subscribe((e) => {
+        this.entregas.set(e);
+        this.syncEditState();
+      });
     });
   }
 

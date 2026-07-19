@@ -1,0 +1,15 @@
+@if (confirmSvc.request(); as r) {
+  <div class="confirm-overlay" (click)="confirmSvc.respond(false)">
+    <div class="confirm-card" [class.danger]="r.danger" (click)="$event.stopPropagation()">
+      <h3 class="confirm-title">
+        <app-icon [name]="r.danger ? 'alert-triangle' : 'info'" [size]="18" />
+        {{ r.title }}
+      </h3>
+      <p class="confirm-message">{{ r.message }}</p>
+      <div class="confirm-actions">
+        <button class="secondary" (click)="confirmSvc.respond(false)">Cancelar</button>
+        <button [class.danger]="r.danger" (click)="confirmSvc.respond(true)">{{ r.confirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+}

@@ -19,6 +19,8 @@ export interface CategoriaInput {
   nombre: string;
   peso: number; // 0-100
   nota: number | null; // 0-20, o null si aún no hay datos
+  cantidad?: number; // cuántas tareas de este tipo existen (informativo)
+  cantidadConDatos?: number; // cuántas de esas ya tienen nota (informativo)
 }
 
 export interface CategoriaResuelta {
@@ -26,6 +28,8 @@ export interface CategoriaResuelta {
   peso: number;
   nota: number | null;
   tieneDatos: boolean;
+  cantidad?: number;
+  cantidadConDatos?: number;
 }
 
 export interface RubricaResultado {
@@ -46,6 +50,8 @@ export function calcularRubrica(categorias: CategoriaInput[]): RubricaResultado 
     peso: c.peso,
     nota: c.nota === null || c.nota === undefined ? null : redondear(c.nota),
     tieneDatos: c.nota !== null && c.nota !== undefined,
+    cantidad: c.cantidad,
+    cantidadConDatos: c.cantidadConDatos,
   }));
 
   const conDatos = resueltas.filter((c) => c.tieneDatos);

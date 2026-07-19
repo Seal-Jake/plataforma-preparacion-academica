@@ -122,7 +122,8 @@ export async function calcularRubricaCurso(courseId: string, studentId: string):
     porTipo.set(s.tipoFijo, [...(porTipo.get(s.tipoFijo) ?? []), s]);
   }
 
-  const categorias: { nombre: string; peso: number; nota: number | null }[] = [];
+  const categorias: { nombre: string; peso: number; nota: number | null; cantidad: number; cantidadConDatos: number }[] =
+    [];
   for (const def of TIPOS_TAREA) {
     const instancias = porTipo.get(def.tipo) ?? [];
     const notas = (await Promise.all(instancias.map((s) => notaSesionParaEstudiante(s, studentId)))).filter(
@@ -132,6 +133,8 @@ export async function calcularRubricaCurso(courseId: string, studentId: string):
       nombre: def.nombre,
       peso: def.peso,
       nota: notas.length > 0 ? promedio(notas) : null,
+      cantidad: instancias.length,
+      cantidadConDatos: notas.length,
     });
   }
 

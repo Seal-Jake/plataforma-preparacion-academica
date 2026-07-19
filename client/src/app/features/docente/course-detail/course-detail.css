@@ -79,15 +79,6 @@
   border-top: 1px solid var(--border);
 }
 
-.contenido-preview {
-  white-space: pre-wrap;
-  max-height: 150px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.6rem;
-}
-
 button.small {
   padding: 0.3rem 0.6rem;
   font-size: 0.8rem;
@@ -133,5 +124,20 @@ button.small {
   overflow-x: auto;
 }
 .planilla-table {
+  white-space: nowrap;
+}
+.entregas-table {
+  white-space: nowrap;
+}
+.nota-inline {
+  width: 4.5rem;
+}
+.feedback-inline {
+  min-width: 160px;
+}
+.contenido-inline {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }

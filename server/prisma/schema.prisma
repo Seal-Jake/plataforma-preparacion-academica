@@ -159,13 +159,14 @@ model Enrollment {
   @@unique([studentId, courseId])
 }
 
-// Rúbrica fija de la plataforma (ver TIPOS_SESION_FIJOS en lib/enums.ts):
-// cada tema recibe automáticamente sus 3 sesiones fijas (Participación en
-// Clase, Práctica, Participación Activa), cada unidad las suyas (Examen y
-// Proyecto de Unidad), y cada curso las suyas (Examen Final y Proyecto
-// Final). tipoFijo identifica cuál es, y exactamente uno de
-// courseId/unitId/topicId corresponde al nivel de esa sesión (topicId
-// también implica su unitId para poder consultar por unidad directamente).
+// Una instancia de tarea (ver TIPOS_TAREA en lib/enums.ts): el docente crea
+// tantas como quiera de cada uno de los 6 tipos (TPA, Práctica Calificada,
+// Examen de Unidad, Examen Final, Investigación de Unidad, Investigación
+// Final). tipoFijo identifica el tipo, y exactamente uno de
+// courseId/unitId/topicId corresponde a su ámbito (topicId también implica
+// su unitId para poder consultar por unidad directamente). La calificación
+// es siempre por modo: preguntas autocalificadas (requiereEvidencia=false)
+// o entrega manual calificada por el docente (requiereEvidencia=true).
 model AcademicSession {
   id                String    @id @default(cuid())
   courseId          String?
@@ -173,13 +174,11 @@ model AcademicSession {
   topicId           String?
   tipoFijo          String
   title             String
-  questionIds       String // JSON array of question ids, canonical order ("[]" si es de tipo evidencia)
+  questionIds       String // JSON array of question ids, canonical order ("[]" si es de tipo entrega)
   dueDate           DateTime?
   timeLimitMinutes  Int?
   abiertoParaTodos  Boolean   @default(false)
   requiereEvidencia Boolean   @default(false)
-  pesoAciertos      Float     @default(40)
-  pesoEvidencia     Float     @default(60)
   createdAt         DateTime  @default(now())
 
   course        Course?               @relation(fields: [courseId], references: [id], onDelete: Cascade)
