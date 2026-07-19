@@ -89,7 +89,11 @@
           } @else {
             <p class="field-hint"><app-icon name="info" [size]="13" /> Escribe tu respuesta y/o adjunta un archivo. Tu docente la calificará manualmente.</p>
             <textarea [(ngModel)]="respuestaAbiertaTexto" rows="5" placeholder="Escribe tu respuesta aquí (opcional si adjuntas un archivo)"></textarea>
-            <input type="file" (change)="onRespuestaAbiertaArchivoSelected($event)" />
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,image/png,image/jpeg,image/webp"
+              (change)="onRespuestaAbiertaArchivoSelected($event)"
+            />
             @if (q.tieneArchivo) {
               <p class="muted">
                 <app-icon name="file-text" [size]="13" /> Ya adjuntaste un archivo.
@@ -132,7 +136,11 @@
         </h3>
         <p class="muted">Sube un archivo con el desarrollo completo de tus ejercicios, o descríbelo en texto.</p>
         <textarea [(ngModel)]="entregaTexto" rows="4" placeholder="Descripción o resolución en texto (opcional)"></textarea>
-        <input type="file" (change)="onEvidenciaSelected($event)" />
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,image/png,image/jpeg,image/webp"
+          (change)="onEvidenciaSelected($event)"
+        />
         <button (click)="guardarEvidencia()"><app-icon name="upload" [size]="14" /> Guardar evidencia</button>
         @if (entregaGuardada()) {
           <span class="badge success"><app-icon name="check-circle" [size]="11" /> Guardado</span>

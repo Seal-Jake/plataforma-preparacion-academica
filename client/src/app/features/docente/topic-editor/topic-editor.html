@@ -148,7 +148,11 @@
                           · <button type="button" class="danger small" (click)="eliminarArchivoPregunta(editingQuestion()!, s)">Quitar</button>
                         </p>
                       }
-                      <input type="file" (change)="onQuestionArchivoSelected($event)" />
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,image/png,image/jpeg,image/webp"
+                        (change)="onQuestionArchivoSelected($event)"
+                      />
                     </div>
 
                     <div class="fieldset-section">

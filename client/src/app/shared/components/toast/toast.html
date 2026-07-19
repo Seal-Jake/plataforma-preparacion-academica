@@ -1,0 +1,11 @@
+<div class="toast-stack" role="status" aria-live="polite">
+  @for (m of toastSvc.messages(); track m.id) {
+    <div class="toast" [class.error]="m.type === 'error'" [class.success]="m.type === 'success'">
+      <app-icon [name]="m.type === 'error' ? 'alert-triangle' : 'check-circle'" [size]="16" />
+      <span>{{ m.text }}</span>
+      <button type="button" class="toast-close" (click)="toastSvc.dismiss(m.id)" aria-label="Cerrar notificación">
+        <app-icon name="x" [size]="14" />
+      </button>
+    </div>
+  }
+</div>

@@ -11,16 +11,36 @@
   padding: 0.75rem 1.5rem;
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
 .brand {
   font-weight: 700;
 }
 
+.menu-toggle {
+  display: none;
+  background: transparent;
+  color: var(--fg);
+  padding: 0.4rem;
+  margin-left: auto;
+}
+.menu-toggle:hover {
+  background: var(--bg-card);
+}
+
+.nav-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 1rem;
+}
+
 .topbar nav {
   display: flex;
   gap: 1rem;
-  flex: 1;
+  flex-wrap: wrap;
 }
 
 .session-info {
@@ -43,4 +63,34 @@ main {
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
+}
+
+/* Por debajo de este ancho, la barra superior no cabe en una sola fila
+   (marca + enlaces + sesión): se colapsa a un botón de menú. */
+@media (max-width: 720px) {
+  .menu-toggle {
+    display: inline-flex;
+  }
+  .nav-panel {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .nav-panel.open {
+    display: flex;
+  }
+  .topbar nav {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .session-info {
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+  main {
+    padding: 1rem;
+  }
 }

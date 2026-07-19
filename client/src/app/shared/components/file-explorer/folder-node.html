@@ -46,7 +46,11 @@
       <div class="inline-form column">
         <input [(ngModel)]="nuevoArchivoNombre" placeholder="Nombre del elemento" />
         <textarea [(ngModel)]="nuevoArchivoTexto" placeholder="Nota de texto (opcional si adjuntas un archivo)" rows="2"></textarea>
-        <input type="file" (change)="onFileSelected($event)" />
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,image/png,image/jpeg,image/webp"
+          (change)="onFileSelected($event)"
+        />
         <button class="small" (click)="guardarArchivo()">Guardar</button>
       </div>
     }

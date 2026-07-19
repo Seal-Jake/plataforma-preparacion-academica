@@ -6,13 +6,14 @@ import { catchError, of } from 'rxjs';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { errorToastInterceptor } from './core/interceptors/error-toast.interceptor';
 import { AuthService } from './core/services/auth.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorToastInterceptor])),
     provideCharts(withDefaultRegisterables()),
     provideAppInitializer(() => {
       const auth = inject(AuthService);
